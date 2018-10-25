@@ -18,6 +18,8 @@ library(gridExtra)
 
 Model `r model_list$id`: `r model_list$description`
 
+`r if(!meets_data_criteria){'<span style="color:red; font-size:30px">Warning: this lake did not meet the chosen data criteria</span>'}`
+
 ```{r summarize_network, echo=FALSE}
 model_list$network <- unserialize_model(model_list$serialized)
 summary(model_list$network)
@@ -33,11 +35,11 @@ tibble(split = c("train", "dev", "test"), n = c(n_train, n_dev, n_test),
 percent = round(100*c(n_train/n_total, n_dev/n_total, n_test/n_total)))
 
 all_obs_mat <- rbind(dat$train_input, dat$dev_input, dat$test_input) 
-obs_splits_df <- as_tibble(all_obs_mat) %>% select(Depth) %>% 
-  mutate(Depth = Depth*dat$scales[['Depth']] + dat$centers[['Depth']], 
+obs_splits_df <- as_tibble(all_obs_mat) %>% select(depth) %>% 
+  mutate(depth = depth*dat$scales[['depth']] + dat$centers[['depth']], 
          Date = as.Date(rownames(all_obs_mat), format = "%Y%m%d"),
          split = c(rep("train", n_train), rep("dev", n_dev), rep("test", n_test)))
-ggplot(obs_splits_df, aes(x=Date, y=Depth)) +
+ggplot(obs_splits_df, aes(x=Date, y=depth)) +
   geom_point(aes(col=split)) + scale_y_reverse() + theme_classic() +
   theme(panel.background = element_rect(fill='gray95')) +
   ggtitle('Observation splits by date and depth')
@@ -76,17 +78,18 @@ preds <- bind_rows(
     example = names(dat$train_target),
     glm = dat$train_input[, 'GLMTemp'] * dat$scales[['GLMTemp']] + dat$centers[['GLMTemp']],
     nn = model_list$network %>% predict(dat$train_input) %>% c(),
-    obs = dat$train_target),
+    obs = dat$train_target, 
+    depth = dat$train_input[,'depth'] * dat$scales[['depth']] + dat$centers[['depth']]),
   data_frame(
     split = 'devel',
     example = names(dat$dev_target),
     glm = dat$dev_input[, 'GLMTemp'] * dat$scales[['GLMTemp']] + dat$centers[['GLMTemp']],
     nn = model_list$network %>% predict(dat$dev_input) %>% c(),
-    obs = dat$dev_target)
+    obs = dat$dev_target, 
+    depth = dat$dev_input[,'depth'] * dat$scales[['depth']] + dat$centers[['depth']])
 ) %>%
   mutate( # the following makes assumptions that only work for NN (not RNN or SNN) models
-    date=as.Date(substring(example, 1, 8), format='%Y%m%d'),
-    depth=as.numeric(gsub('[[:digit:]]{8}_', '', gsub('m', '', example)))
+    date=as.Date(substring(example, 1, 8), format='%Y%m%d')
   ) %>% 
   gather(model, pred, glm, nn, obs)
 ```
