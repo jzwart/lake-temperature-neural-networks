@@ -12,3 +12,7 @@ build/status/MV9mb3JtYXQvdG1wL25oZF*
 *tasks.yml
 *.feather
 in/driver-data/*.csv
+tf_tuning/*.npy
+tf_tuning/mille/data/*.npy
+tf_tuning/mille/out/pretrain*
+tf_tuning/mille/out/train*
