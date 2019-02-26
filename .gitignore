@@ -17,6 +17,7 @@ lib/cfg/user_settings.yml
 *.nc
 *.rds
 *.feather
+*.fst
 *.html
 */tmp/
 1_format/in/tmp/

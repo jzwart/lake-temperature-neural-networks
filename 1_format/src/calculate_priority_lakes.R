@@ -43,21 +43,17 @@ calc_priority_lakes <- function(temp_dat_ind, n_min, n_years, years_with_7months
 
 }
 
-combine_priorities <- function(priority_lakes_by_choice, priority_lakes_by_data, nldas_crosswalk_ind,
-                               truncate_lakes_for_dev = FALSE) {
+combine_priorities <- function(priority_lakes_by_choice, priority_lakes_by_data, truncate_lakes_for_dev = FALSE) {
 
-  crosswalk <- readRDS(sc_retrieve(nldas_crosswalk_ind))
-  all_lakes <- unique(c(priority_lakes_by_choice, priority_lakes_by_data))
+  # combine the two lake lists (by union)
+  all_lakes <- union(priority_lakes_by_choice, priority_lakes_by_data)
 
-  all_lakes_names <-  crosswalk %>%
-    filter(site_id %in% all_lakes) %>%
-    mutate(obs_file = sprintf("1_format/tmp/%s_separated_obs.rds.ind", site_id),
-           glm_preds_file = sprintf('1_format/in/glm_preds/%s_output.nc.ind', site_id),
-           meteo_file = sprintf("in/driver-data/NLDAS_time[0.346848]_x[%s]_y[%s].csv.ind", nldas_coord_x, nldas_coord_y),
-           lake_name = gsub('\\d+$', '', GNIS_Nm)) %>%
-    #other columns from NLDAS file or master lake list could be saved here if useful
-    select(site_id, lake_name, obs_file, glm_preds_file, meteo_file) %>%
-    distinct()
+  # but during pipeline development, just use two lakes
+  if(truncate_lakes_for_dev) {
+    all_lakes <- c("nhd_2360642", "nhd_13293262")
+  }
+
+  # give warning if the selected lakes don't meet the priority_lakes_by_data criteria
   choice_lakes_dont_quality <- priority_lakes_by_choice[!priority_lakes_by_choice %in% priority_lakes_by_data]
   if(length(choice_lakes_dont_quality) > 0) {
     warning(
@@ -65,22 +61,67 @@ combine_priorities <- function(priority_lakes_by_choice, priority_lakes_by_data,
       " chosen lakes don't meet data criteria: ",
       paste(choice_lakes_dont_quality, collapse=', '))
   }
+  # attach data criteria info to selected IDs
+  lake_selection <- tibble(
+    site_id = all_lakes,
+    meets_data_criteria = !(site_id %in% choice_lakes_dont_quality))
 
-  reg_sheet <- googlesheets::gs_key('1gCfesykjlTDQvdNlWJDo1GkCTOufRJOZdZx7Kzbp0vM')
-  missing_names <- googlesheets::gs_read(ss = reg_sheet, col_types = cols('c','c'))
+  return(lake_selection)
+}
 
+#' @param nldas_crosswalk_ind indicator file of the lake crosswalk, which has
+#'   details on the cell x and cell y for each lake
+add_lake_metadata <- function(lake_selection, nldas_crosswalk_ind) {
+  # merge in data from the crosswalk
+  crosswalk <- readRDS(sc_retrieve(nldas_crosswalk_ind)) %>%
+    mutate(site_id = as.character(site_id))
+
+  all_lakes_names <-  lake_selection %>%
+    left_join(crosswalk, by='site_id') %>%
+    mutate(lake_name = trimws(gsub('\\d+$', '', GNIS_Nm))) %>%
+    #other columns from NLDAS file or master lake list could be saved here if useful
+    select(site_id, lake_name, meets_data_criteria, nldas_coord_x, nldas_coord_y) %>%
+    distinct()
+
+  # use a google sheet to fill in any lake names that are missing from the crosswalk
+  lakename_repair_sheet <- '1_format/in/missing_names_crosswalk'
+  missing_names <- scipiper:::gd_locate_file(lakename_repair_sheet) %>%
+    filter(name == basename(lakename_repair_sheet)) %>%
+    pull(id) %>%
+    googlesheets::gs_key() %>%
+    googlesheets::gs_read(col_types = cols('c','c'))
   all_lakes_names_fixed <- left_join(all_lakes_names, missing_names, by = 'site_id') %>%
-    mutate(lake_name = ifelse(is.na(lake_name.x), lake_name.y, lake_name.x),
-           meets_data_criteria = ifelse(site_id %in% choice_lakes_dont_quality,
-                                        yes = FALSE, no = TRUE)) %>%
-    select(site_id, lake_name, obs_file, glm_preds_file, meteo_file, meets_data_criteria)
+    mutate(lake_name = ifelse(is.na(lake_name.x), lake_name.y, lake_name.x)) %>%
+    select(-lake_name.x, -lake_name.y)
 
+  # make sure we filled in all the missing lake names (or give warning)
   if (any(is.na(all_lakes_names_fixed$lake_name))) {
-    warning(paste0('Some NHD ids are still missing lake names (site_id = ', paste(all_lakes_names_fixed$site_id[is.na(all_lakes_names_fixed$lake_name)], sep = ', '), '). Update the google sheet lake-temperature-neural-networks/in/missing_names_crosswalk.'))
-  }
-  if(truncate_lakes_for_dev) {
-     all_lakes_names_fixed <- all_lakes_names_fixed %>% filter(site_id %in% c("nhd_2360642", "nhd_13293262"))
+    warning(paste0(
+      'Some NHD ids are still missing lake names (site_id = ',
+      paste(all_lakes_names_fixed$site_id[is.na(all_lakes_names_fixed$lake_name)], sep = ', '),
+      sprintf('). Update the google sheet lake-temperature-neural-networks/%s.', lakename_repair_sheet)))
   }
 
   return(all_lakes_names_fixed)
+}
+
+#' Assign file paths to the three input files that we'll need per lake (before
+#' munging to prepare them for input to the PGDL models)
+#'
+#' @param lakes_df a data.frame with one row per priority lake
+#' @param obs_pattern an sprintf string with exactly one `%s`` wildcard for the
+#'   lake id
+#' @param glm_preds_pattern an sprintf string with exactly one `%s`` wildcard
+#'   for the lake id
+#' @param drivers_pattern an sprintf string with exactly three `%s`` wildcard
+#'   for the time range, cell x, and cell y
+#' @param drivers_time a string to be used as the time range in the
+#'   drivers_pattern
+assign_lake_files <- function(lakes_df, obs_pattern, glm_preds_pattern, drivers_pattern, drivers_time) {
+  lakes_df %>%
+    mutate(
+      obs_file = sprintf(obs_pattern, site_id),
+      glm_preds_file = sprintf(glm_preds_pattern, site_id),
+      drivers_file = sprintf(drivers_pattern, drivers_time, nldas_coord_x, nldas_coord_y)) %>%
+    select(site_id, lake_name, meets_data_criteria, obs_file, glm_preds_file, drivers_file)
 }
