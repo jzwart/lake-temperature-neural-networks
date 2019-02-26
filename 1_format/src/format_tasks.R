@@ -119,23 +119,3 @@ create_format_task_makefile <- function(task_plan, makefile, ...) {
     include = "1_format.yml",
     ...)
 }
-
-separate_obs <- function(site_id, out_ind, all_obs_file_ind) {
-  #assuming data is already fully clean
-  site_obs <- read_feather(as_data_file(all_obs_file_ind)) %>% filter(nhd_id == site_id) %>%
-    rename(DateTime = date) %>% as.data.frame() #need these col names for glmtools::resample_to_field
-  saveRDS(object = site_obs, file = as_data_file(out_ind))
-  sc_indicate(ind_file = out_ind, data_file = as_data_file(out_ind))
-}
-
-#' Uses rsync and ssh to pull data/predictions from Yeti
-#'
-#' SSH keys must be set up for communication with Yeti; see README.md for
-#' directions
-syncr_indicate <- function(out_ind, glm_yeti_path) {
-  user <- Sys.info()[['user']] #assumes this is your yeti login
-  data_file <- as_data_file(out_ind)
-  src <- sprintf('%s@yeti.cr.usgs.gov:%s/%s', user, glm_yeti_path, basename(data_file))
-  syncr::syncr(src, data_file)
-  sc_indicate(ind_file = out_ind, data_file = data_file)
-}

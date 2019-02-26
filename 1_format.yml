@@ -1,25 +1,27 @@
 target_default: 1_format
 
 packages:
-  - zeallot
-  - readr
-  - yaml
-  - googledrive
-  - scipiper
   - dplyr
   - feather
+  - fst
+  - googledrive
+  - readr
+  - scipiper
+  - yaml
+  - zeallot
 
 sources:
   - lib/src/utils.R
-  - 1_format/src/format_tasks.R
   - 1_format/src/calculate_priority_lakes.R
+  - 1_format/src/splitters.R
+  - 1_format/src/format_tasks.R
 
 targets:
   1_format:
     depends:
       - 1_format/log/1_format_tasks.ind
 
-  # read and subset the NN settings
+  # read and subset the project/user settings
   settings:
     command: yaml.load_file('lib/cfg/settings.yml')
   combine_cfg:
@@ -28,11 +30,14 @@ targets:
     command: settings[I(c('structure'))]
   split_scale_cfg:
     command: settings[I(c('dev_frac', 'test_frac'))]
-  glm_yeti_path_cfg:
-    command: settings[I(c('glm_yeti_path'))]
+  glm_preds_yeti_path:
+    command: settings[[I(c('glm_preds_yeti_path'))]]
+  drivers_yeti_path:
+    command: settings[[I(c('drivers_yeti_path'))]]
+  drivers_time:
+    command: settings[[I(c('drivers_time'))]]
 
-
-  #### retrieve files deposited in our Drive from other pipelines ####
+  #### Retrieve files needed to select priority lakes ####
 
   # The following gd_get calls assume that data files from previous pipelines
   # have been copied from pipelines 1 and 2 to this pipeline's Drive folder,
@@ -47,7 +52,7 @@ targets:
     command: gd_get(ind_file = '1_format/in/feature_nldas_coords.rds.ind')
 
 
-  #### identify priority lakes ####
+  #### Identify priority lakes ####
 
   priority_lakes_by_choice:
    command: get_site_ids(file = '1_format/in/pipeline_3_lakes.csv')
@@ -61,22 +66,63 @@ targets:
       years_with_10days = 20,
       n_days = 1000)
 
-  priority_lakes:
+  priority_lake_selection:
     command: combine_priorities(
       priority_lakes_by_choice,
       priority_lakes_by_data,
-      nldas_crosswalk_ind = "1_format/in/feature_nldas_coords.rds.ind",
       truncate_lakes_for_dev = I(TRUE))
 
+  priority_lake_details:
+    command: add_lake_metadata(
+      priority_lake_selection,
+      nldas_crosswalk_ind = '1_format/in/feature_nldas_coords.rds.ind')
+
+  # set the lake filename patterns:
+  # the path should be where you want the file to go when it's downloaded to this pipeline,
+  # and the basename must exactly match BOTH what's on Yeti and what will be created locally.
+  priority_lakes:
+    command: assign_lake_files(
+      priority_lake_details,
+      obs_pattern = I('1_format/tmp/obs/%s_obs.fst'),
+      glm_preds_pattern = I('1_format/tmp/glm_preds/%s_output.nc'),
+      drivers_pattern = I('1_format/tmp/drivers/NLDAS_time[%s]_x[%s]_y[%s].csv'),
+      drivers_time = drivers_time)
+
+  #### Retrieve/create data files for priority lakes ####
+
+  # The following "splitter" or "one-to-many" targets each use a single function to
+  # create many files plus a summary .ind file with file names and hashes. We prefer
+  # using a single function for many files because we can save on the number of file
+  # reads (for separate_obs) or the number of calls to rsync (for retrieve_lake_data).
+
+  # We use ".tmpind" instead of ".ind" so that no build/status files are created for
+  # these indicator files. That's because we're using them to provide indication about
+  # local rather than shared-cache status, so git committing the .ind or build/status
+  # files wouldn't be appropriate. This doesn't break the 1_format pipeline for others
+  # (or require them to download all the yeti files themselves) as long as these three
+  # targets are only ever used within the 1_format task plan.
+
+  1_format/tmp/obs.tmpind:
+    command: separate_obs(
+      out_ind = target_name,
+      priority_lakes = priority_lakes,
+      all_obs_ind = '1_format/in/merged_temp_data_daily.feather.ind')
+
+  1_format/tmp/glm_preds.tmpind:
+    command: retrieve_lake_data(
+      out_ind = target_name,
+      priority_lakes = priority_lakes,
+      file_column = I('glm_preds_file'),
+      yeti_path = glm_preds_yeti_path)
+
+  1_format/tmp/drivers.tmpind:
+    command: retrieve_lake_data(
+      out_ind = target_name,
+      priority_lakes = priority_lakes,
+      file_column = I('drivers_file'),
+      yeti_path = drivers_yeti_path)
 
   #### prepare PGDL data for priority lakes ####
-
-  # The following task plan pulls driver data and GLM outputs from the Yeti
-  # project directory, /cxfs/projects/usgs/water/iidd/data-sci/lake-temp.
-  #   * From pipeline 1 (lake-temp/driver-data on Yeti):
-  #     driver data packaged in cell-specific files, e.g., NLDAS_time[0.346848]_x[335]_y[142].csv
-  #   * From pipeline 2 (lake-temp/glm_output on Yeti):
-  #     GLM output packaged in lake-specific files, e.g., nhd_13293262_output.nc
 
   format_data_task_plan:
     command: create_format_task_plan(priority_lakes, ind_dir = I("1_format"))
