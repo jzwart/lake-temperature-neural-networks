@@ -1,12 +1,16 @@
+# R and python project info
 .Rproj.user
 .Rhistory
 .RData
+.spyproject/
+
+# user-specific info
 .Ruserdata
 .httr-oauth
+lib/cfg/user_settings.yml
 
 # some build info
 .remake
-build/status/MV9mb3JtYXQvdG1wL25oZF*
 *tasks.yml
 
 # data and temporary files

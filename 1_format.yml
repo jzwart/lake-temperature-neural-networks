@@ -32,22 +32,51 @@ targets:
     command: settings[I(c('glm_yeti_path'))]
 
 
-  # get temperature observations from pipeline #1
-  in/merged_temp_data_daily.feather:
-    command: gd_get(ind_file = 'in/merged_temp_data_daily.feather.ind')
+  #### retrieve files deposited in our Drive from other pipelines ####
 
-  # get NLDAS-NHD crosswalk from pipeline #2
-  in/feature_nldas_coords.rds:
-    command: gd_get(ind_file = 'in/feature_nldas_coords.rds.ind')
+  # The following gd_get calls assume that data files from previous pipelines
+  # have been copied from pipelines 1 and 2 to this pipeline's Drive folder,
+  # and that their respective indicator files have been copied to this git repo:
+
+  # temperature observations from pipeline #1
+  1_format/in/merged_temp_data_daily.feather:
+    command: gd_get(ind_file = '1_format/in/merged_temp_data_daily.feather.ind')
+
+  # NLDAS-NHD crosswalk from pipeline #2 (master NHD lake list with names and corresponding NLDAS tilenames)
+  1_format/in/feature_nldas_coords.rds:
+    command: gd_get(ind_file = '1_format/in/feature_nldas_coords.rds.ind')
+
+
+  #### identify priority lakes ####
 
   priority_lakes_by_choice:
-   command: get_site_ids(file = 'lib/crosswalks/pipeline_3_lakes.csv')
+   command: get_site_ids(file = '1_format/in/pipeline_3_lakes.csv')
 
   priority_lakes_by_data:
-    command: calc_priority_lakes(temp_dat = 'in/merged_temp_data_daily.feather', n_min = 2000, n_years = 30, years_with_7months = 10, years_with_10days = 20, n_days = 1000)
+    command: calc_priority_lakes(
+      temp_dat_ind = '1_format/in/merged_temp_data_daily.feather.ind',
+      n_min = 2000,
+      n_years = 30,
+      years_with_7months = 10,
+      years_with_10days = 20,
+      n_days = 1000)
 
   priority_lakes:
-    command: combine_priorities(priority_lakes_by_choice, priority_lakes_by_data, nldas_crosswalk_file = "in/feature_nldas_coords.rds", truncate_lakes_for_dev = I(TRUE))
+    command: combine_priorities(
+      priority_lakes_by_choice,
+      priority_lakes_by_data,
+      nldas_crosswalk_ind = "1_format/in/feature_nldas_coords.rds.ind",
+      truncate_lakes_for_dev = I(TRUE))
+
+
+  #### prepare PGDL data for priority lakes ####
+
+  # The following task plan pulls driver data and GLM outputs from the Yeti
+  # project directory, /cxfs/projects/usgs/water/iidd/data-sci/lake-temp.
+  #   * From pipeline 1 (lake-temp/driver-data on Yeti):
+  #     driver data packaged in cell-specific files, e.g., NLDAS_time[0.346848]_x[335]_y[142].csv
+  #   * From pipeline 2 (lake-temp/glm_output on Yeti):
+  #     GLM output packaged in lake-specific files, e.g., nhd_13293262_output.nc
 
   format_data_task_plan:
     command: create_format_task_plan(priority_lakes, ind_dir = I("1_format"))
