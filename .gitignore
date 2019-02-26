@@ -2,17 +2,17 @@
 .Rhistory
 .RData
 .Ruserdata
-.remake
-*.rds
-1_format/in
-1_format/tmp
-build/status/MV9mb3JtYXQvdG1wL25oZF*
-2_model/doc
 .httr-oauth
+
+# some build info
+.remake
+build/status/MV9mb3JtYXQvdG1wL25oZF*
 *tasks.yml
+
+# data and temporary files
+*.nc
+*.rds
 *.feather
-in/driver-data/*.csv
-tf_tuning/*.npy
-tf_tuning/mille/data/*.npy
-tf_tuning/mille/out/pretrain*
-tf_tuning/mille/out/train*
+*.html
+*/tmp/
+1_format/in/tmp/
