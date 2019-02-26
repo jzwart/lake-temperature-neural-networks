@@ -44,6 +44,3 @@ targets:
 
   2_model/log/2_model_tasks.ind:
     command: loop_tasks(task_plan = model_task_plan, task_makefile = '2_model_tasks.yml', num_tries = 1)
-
-
-

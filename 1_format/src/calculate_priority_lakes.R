@@ -5,9 +5,9 @@
 #' @param years_with_7months number of years for which a lake has observations in 7 or more months, which qualifies a lake for priority status
 #' @param years_with_10days number of years for which a lake has 10 or more days of observations, which qualifies a lake for priority status
 #' @param n_days number of observation days a lake has over the entire period or record which qualifies a lake for priority status
-calc_priority_lakes <- function(temp_dat, n_min, n_years, years_with_7months, years_with_10days, n_days) {
+calc_priority_lakes <- function(temp_dat_ind, n_min, n_years, years_with_7months, years_with_10days, n_days) {
   # This function calculates priority lakes based on data availability
-  all_dat <- feather::read_feather(temp_dat)
+  all_dat <- feather::read_feather(sc_retrieve(temp_dat_ind))
 
   stats <- all_dat %>%
     mutate(year = lubridate::year(date),
@@ -43,10 +43,10 @@ calc_priority_lakes <- function(temp_dat, n_min, n_years, years_with_7months, ye
 
 }
 
-combine_priorities <- function(priority_lakes_by_choice, priority_lakes_by_data, nldas_crosswalk_file,
+combine_priorities <- function(priority_lakes_by_choice, priority_lakes_by_data, nldas_crosswalk_ind,
                                truncate_lakes_for_dev = FALSE) {
 
-  crosswalk <- readRDS(nldas_crosswalk_file)
+  crosswalk <- readRDS(sc_retrieve(nldas_crosswalk_ind))
   all_lakes <- unique(c(priority_lakes_by_choice, priority_lakes_by_data))
 
   all_lakes_names <-  crosswalk %>%
@@ -60,11 +60,14 @@ combine_priorities <- function(priority_lakes_by_choice, priority_lakes_by_data,
     distinct()
   choice_lakes_dont_quality <- priority_lakes_by_choice[!priority_lakes_by_choice %in% priority_lakes_by_data]
   if(length(choice_lakes_dont_quality) > 0) {
-    warning(length(choice_lakes_dont_quality), " chosen lakes don't meet data criteria: ", choice_lakes_dont_quality)
+    warning(
+      length(choice_lakes_dont_quality),
+      " chosen lakes don't meet data criteria: ",
+      paste(choice_lakes_dont_quality, collapse=', '))
   }
 
   reg_sheet <- googlesheets::gs_key('1gCfesykjlTDQvdNlWJDo1GkCTOufRJOZdZx7Kzbp0vM')
-  missing_names <- googlesheets::gs_read(ss = reg_sheet)
+  missing_names <- googlesheets::gs_read(ss = reg_sheet, col_types = cols('c','c'))
 
   all_lakes_names_fixed <- left_join(all_lakes_names, missing_names, by = 'site_id') %>%
     mutate(lake_name = ifelse(is.na(lake_name.x), lake_name.y, lake_name.x),
