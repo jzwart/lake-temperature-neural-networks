@@ -5,6 +5,7 @@ packages:
   - feather
   - fst
   - googledrive
+  - purrr
   - readr
   - scipiper
   - yaml
