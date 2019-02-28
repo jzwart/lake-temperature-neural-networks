@@ -1,8 +1,9 @@
 # Goal: go from these data files from other pipelines:
 
-# preds = I('1_format/in/glm_preds/nhd_13293262_output.nc'),
-# drivers = I('1_format/in/drivers/NLDAS_time[0.346848]_x[344]_y[196].csv'),
-# obs = I('1_format/in/obs/nhd_13293262_temps.feather'),
+# obs_file        "1_format/tmp/obs/nhd_1099476_obs.fst"
+# geometry_file   "1_format/tmp/geometry/nhd_1099476_geometry.csv"
+# glm_preds_file  "1_format/tmp/glm_preds/nhd_1099476_temperatures.feather"
+# drivers_file    "1_format/tmp/drivers/NLDAS_time[0.350500]_x[254]_y[160].csv"
 
 # to these PGDL-read input files:
 
@@ -14,11 +15,6 @@
 # y_test: Observations for testing
 # m_test: Observation mask for testing
 # depth_areas: cross-sectional area of each depth
-
-# obs_file        "1_format/tmp/obs/nhd_1099476_obs.fst"
-# geometry_file   "1_format/tmp/geometry/nhd_1099476_geometry.csv"
-# glm_preds_file  "1_format/tmp/glm_preds/nhd_1099476_temperatures.feather"
-# drivers_file    "1_format/tmp/drivers/NLDAS_time[0.350500]_x[254]_y[160].csv"
 
 prep_pgdl_data <- function(
   lake_id = 'nhd_1099476',
