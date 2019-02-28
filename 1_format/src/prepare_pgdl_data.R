@@ -154,7 +154,7 @@ prep_pgdl_data <- function(
     Depth = depths,
     Area = approx(x=geometry$depths, y=geometry$areas, xout=Depth)$y)
 
-  #### Reshape and format data for TensorFlow ####
+  #### Reshape and format data into ~tidy format ####
 
   # Extract the dimension names
   dates <- drivers$date
@@ -186,7 +186,7 @@ prep_pgdl_data <- function(
   stopifnot(nrow(glm_preds_long) == n_dates * n_depths)
   stopifnot(nrow(obs_long) == n_dates * n_depths)
 
-  #### TODO Split into training, tuning, and testing sets (before normalizing) ####
+  #### Split into training, tuning, and testing sets (before normalizing) ####
 
   # Choose the test/tune/train dates
   obs_dates <- sort(unique(obs$date))
