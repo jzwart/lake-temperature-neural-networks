@@ -21,3 +21,7 @@ lib/cfg/user_settings.yml
 *.html
 */tmp/
 1_format/in/tmp/
+*.npy
+*checkpoint*
+2_model/src/__pycache__/
+2_model/src/mille/
