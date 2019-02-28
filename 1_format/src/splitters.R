@@ -30,7 +30,8 @@ separate_obs <- function(out_ind, priority_lakes, all_obs_ind) {
     tidyr::nest(site_id, obs_file) %>%
     dplyr::pull(data) %>%
     purrr::map_chr(function(site_row) {
-      site_obs <- filter(all_obs, nhd_id == site_row$site_id)
+      site_obs <- filter(all_obs, nhd_id == site_row$site_id) %>%
+        select(-nhd_id) # keep the files small by leaving out this column
       fst::write_fst(site_obs, path = site_row$obs_file, compress = 100)
       site_row$obs_file
     })

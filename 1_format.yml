@@ -31,6 +31,8 @@ targets:
     command: settings[I(c('structure'))]
   split_scale_cfg:
     command: settings[I(c('dev_frac', 'test_frac'))]
+  geometry_yeti_path:
+    command: settings[[I(c('geometry_yeti_path'))]]
   glm_preds_yeti_path:
     command: settings[[I(c('glm_preds_yeti_path'))]]
   drivers_yeti_path:
@@ -85,7 +87,8 @@ targets:
     command: assign_lake_files(
       priority_lake_details,
       obs_pattern = I('1_format/tmp/obs/%s_obs.fst'),
-      glm_preds_pattern = I('1_format/tmp/glm_preds/%s_output.nc'),
+      geometry_pattern = I('1_format/tmp/geometry/%s_geometry.csv'),
+      glm_preds_pattern = I('1_format/tmp/glm_preds/%s_temperatures.feather'),
       drivers_pattern = I('1_format/tmp/drivers/NLDAS_time[%s]_x[%s]_y[%s].csv'),
       drivers_time = drivers_time)
 
@@ -108,6 +111,13 @@ targets:
       out_ind = target_name,
       priority_lakes = priority_lakes,
       all_obs_ind = '1_format/in/merged_temp_data_daily.feather.ind')
+
+  1_format/tmp/geometry.tmpind:
+    command: retrieve_lake_data(
+      out_ind = target_name,
+      priority_lakes = priority_lakes,
+      file_column = I('geometry_file'),
+      yeti_path = geometry_yeti_path)
 
   1_format/tmp/glm_preds.tmpind:
     command: retrieve_lake_data(
