@@ -336,7 +336,7 @@ split_pgdl_data <- function(tidied, n_lead_dates=100) {
         left = obs_non_na %>% filter(date >= date_cutoffs[1] & date <= date_cutoffs[2]) %>%
           restrict_to(obs, ., 0) %>%
           buffer(obs, n_lead_dates),
-        right = obs_non_na %>% filter(date >= date_cutoffs[3] & date >= date_cutoffs[4]) %>%
+        right = obs_non_na %>% filter(date >= date_cutoffs[3] & date <= date_cutoffs[4]) %>%
           restrict_to(obs, ., 0) %>%
           buffer(obs, n_lead_dates))
       # pick out the two shoulders worth of features (based on the labels
@@ -417,6 +417,59 @@ split_pgdl_data <- function(tidied, n_lead_dates=100) {
 
   return(datasets)
 }
+splits <- split_pgdl_data(tidied, n_lead_dates=100)
+
+summarize_pgdl_split <- function(splits, tidied) {
+  split_obs_dates <-
+    bind_rows(mutate(tidied$obs, Type='Obs'),
+              mutate(splits$pretrain$labels, Type='Pretrain'),
+              mutate(splits$train$labels, Type='Train'),
+              mutate(splits$tune$labels, Type='Tune'),
+              mutate(splits$test$labels, Type='Test')) %>%
+    group_by(Type, date) %>%
+    summarize(
+      obs_date = any(!is.na(TempC)),
+      n_obs = length(which(!is.na(TempC)))) %>%
+    mutate(
+      shoulder = {
+        shoulder_end <- date[which(as.numeric(diff(date), units='days') > 1)]
+        if(length(shoulder_end) > 1) stop('found more than 1 shoulder break, not ready for that')
+        if(length(shoulder_end) == 1) {
+          ifelse(date <= shoulder_end, 'left', 'right')
+        } else 'all'
+      }) %>%
+    group_by(Type, shoulder) %>%
+    mutate(buffer = cumsum(obs_date) == 0) %>%
+    group_by(Type, shoulder, buffer) %>%
+    summarize(
+      start=min(date), end=max(date),
+      n_obs=sum(n_obs),
+      n_days=n(), n_obs_days=length(which(obs_date))) %>%
+    arrange(Type, shoulder, desc(buffer))
+
+  split_obs_dates
+}
+summarize_pgdl_split(splits, tidied)
+
+plot_pgdl_split_days <- function(splits, tidied) {
+  split_obs_dates <-
+    bind_rows(mutate(tidied$obs, Type='Obs'),
+              mutate(splits$pretrain$labels, Type='Pretrain'),
+              mutate(splits$train$labels, Type='Train'),
+              mutate(splits$tune$labels, Type='Tune'),
+              mutate(splits$test$labels, Type='Test')) %>%
+    group_by(date, Type) %>%
+    summarize(obs_date = any(!is.na(TempC))) %>%
+    ungroup() %>%
+    mutate(Type = ordered(Type, levels=c('Pretrain','Obs','Train','Tune','Test')))
+  ggplot(split_obs_dates, aes(x=date, y=1)) +
+    geom_point(shape=NA) +
+    geom_vline(data=filter(split_obs_dates, !obs_date), aes(xintercept=date, color=obs_date)) +
+    geom_vline(data=filter(split_obs_dates, obs_date), aes(xintercept=date, color=obs_date)) +
+    ylab('') + theme_classic() + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+    facet_grid(Type ~ ., scales='free_y')
+}
+plot_pgdl_split_days(splits, tidied)
 
 #' Reshape tibbles to PGDL-ready format
 #'
