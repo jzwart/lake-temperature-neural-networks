@@ -66,34 +66,34 @@ tidy_pgdl_data <- function(
   # Reshape glm_preds into long form
   glm_preds <- glm_preds %>%
     tidyr::gather('temp_depth', 'TempC', starts_with('temp')) %>%
-    dplyr::mutate(Depth = as.numeric(gsub('temp_', '', temp_depth))) %>%
-    dplyr::select(date, Depth, TempC) %>%
-    dplyr::arrange(date, Depth)
+    dplyr::mutate(depth = as.numeric(gsub('temp_', '', temp_depth))) %>%
+    dplyr::select(date, depth, TempC) %>%
+    dplyr::arrange(date, depth)
 
   # If there's are missing GLM predictions near the lake bottom, truncate the
   # bottom layers of the dataset until no more than 1 layer is ever missing
   missing_preds <- glm_preds %>% dplyr::filter(is.na(TempC))
   if(nrow(missing_preds) > 0) {
     # Report and truncate if anything but the last depth is missing
-    missing_at_disallowed_depth <- filter(missing_preds, !(Depth %in% max(glm_preds$Depth)))
+    missing_at_disallowed_depth <- filter(missing_preds, !(depth %in% max(glm_preds$depth)))
     if(nrow(missing_at_disallowed_depth) > 0) {
-      new_deepest <- min(missing_at_disallowed_depth$Depth)
+      new_deepest <- min(missing_at_disallowed_depth$depth)
       message(sprintf(
         '%s: %d missing GLM predictions above the deepest depth (%0.1fm) at %s m;\ntruncating to end at %0.1f',
         lake_id, nrow(missing_at_disallowed_depth), max(depths),
-        paste0(sprintf('%0.1f', sort(unique(missing_at_disallowed_depth$Depth))), collapse=', '),
+        paste0(sprintf('%0.1f', sort(unique(missing_at_disallowed_depth$depth))), collapse=', '),
         new_deepest))
       glm_preds <- glm_preds %>%
-        filter(Depth <= new_deepest)
+        filter(depth <= new_deepest)
     }
     # Fill in any of those missing final depths by copying from the next-deepest layer
     glm_preds <- glm_preds %>%
-      dplyr::arrange(date, Depth) %>% # we already did this above, but it's super important for tidyr::fill
+      dplyr::arrange(date, depth) %>% # we already did this above, but it's super important for tidyr::fill
       tidyr::fill(TempC, .direction='down')
   }
 
   # Define the PGDL-prediction depths based on glm_preds
-  depths <- sort(unique(glm_preds$Depth))
+  depths <- sort(unique(glm_preds$depth))
 
   #### Munge observations ####
 
@@ -152,7 +152,7 @@ tidy_pgdl_data <- function(
 
   # Extract the date-time dimension names
   dates <- drivers$date
-  # depths <- sort(unique(glm_preds$Depth)) # this was done above to use in munging the glm_preds, observations, and geometry
+  # depths <- sort(unique(glm_preds$depth)) # this was done above to use in munging the glm_preds, observations, and geometry
 
   # Define the dimension sizes
   n_dates <- length(dates)
@@ -161,24 +161,20 @@ tidy_pgdl_data <- function(
   # Expand drivers from one per date to n_depths per date; add Depth column
   drivers_long <- drivers %>%
     dplyr::slice(rep(1:n(), each = n_depths)) %>%
-    tibble::add_column(Depth = rep(depths, times = length(unique(drivers$date))), .before=2)
+    tibble::add_column(depth = rep(depths, times = length(unique(drivers$date))), .before=2)
 
-  # glm_preds is already the right (long) shape for this step, but right-join
-  # with the drivers date-times to fill in any mismatches with NAs, which we'll
-  # handle later with a mask
-  glm_preds_long <- glm_preds %>%
-    right_join(select(drivers_long, date, Depth), by = c('date', 'Depth'))
+  # glm_preds is already the right (long) shape for this step
+  glm_preds_long <- glm_preds
 
-  # Expand observations to same shape and colnames as drivers (and glm_preds).
-  # This creates lots of NAs, which we'll handle later with a mask
+  # Expand observations to same shape and colnames as drivers within the date
+  # range covered by obs. This creates lots of NAs. We'll handle many NAs later
+  # with a mask.
+  drivers_dims_obs_range <- drivers_long %>%
+    filter(date >= min(obs$date), date <= max((obs$date))) %>%
+    select(date, depth)
   obs_long <- obs %>%
-    rename(Depth = depth, TempC = temp) %>%
-    right_join(select(drivers_long, date, Depth), by = c('date', 'Depth'))
-
-  # The first two columns should now be identical across the three datasets
-  stopifnot(nrow(drivers_long) == n_dates * n_depths)
-  stopifnot(all.equal(select(glm_preds_long, date, Depth), select(drivers_long, date, Depth)))
-  stopifnot(all.equal(select(obs_long, date, Depth), select(drivers_long, date, Depth)))
+    rename(TempC = temp) %>%
+    right_join(drivers_dims_obs_range, by = c('date', 'depth'))
 
   return(list(
     drivers = drivers_long,
@@ -192,18 +188,72 @@ tidied <- tidy_pgdl_data()
 #' Split into training, tuning, and testing sets, then normalize
 #'
 #' @param tidied list containing long-form drivers, glm_preds, obs, and geometry
-#' @param n_lead_dates integer number of dates before the first non-NA label for
-#'   which to include driver data (if available). This should be approximately
-#'   half or more of a window width, so that the LSTM predictions that we are
-#'   comparing to observations (or GLM pretraining 'observations') are those in
-#'   the ~2nd half of a prediction sequence
-split_pgdl_data <- function(tidied, n_lead_dates=100) {
+#' @param sequence_length even integer number of dates within each sequence to
+#'   be fed to the NN. In this function, sequence_length is only used to produce
+#'   splits that are at least 1 sequence length long and a multiple of
+#'   sequence_length/2 long (so that data can be reorganized into 1+ sequences
+#'   that overlap by 50% in the next function).
+split_pgdl_data <- function(tidied, sequence_length=200, sequence_offset=100, n_lead_dates=100) {
 
   # unpack the R list
-  drivers <- tidied$drivers
+  drivers <- tidied$drivers %>%
+    mutate(Depth = depth) # copy into column to keep Depth as a predictor, not just a dimension
   glm_preds <- tidied$glm_preds
   obs <- tidied$obs
   geometry <- tidied$geometry
+
+  #### Truncate drivers ####
+
+  # truncate the drivers to a window that contains an integer number of
+  # sequences, prefering to cut driver dates that have no corresponding GLM
+  # predictions or observations, and prefering to cut observations from the left
+  # (earlier dates) rather than the right (because the obs quality may have been
+  # worse in the early monitoring years)
+  truncate_drivers <- function(drivers, glm_preds, obs) {
+    glm_date_range <- glm_preds %>%
+      filter(!is.na(TempC)) %>%
+      pull(date) %>%
+      range()
+    obs_date_range <- obs %>%
+      filter(!is.na(TempC)) %>%
+      pull(date) %>%
+      range()
+    driver_dates <- drivers %>%
+      group_by(date) %>%
+      summarize(driver_date = TRUE) %>%
+      mutate(glm_shoulder = ifelse(date < glm_date_range[1], 'left', ifelse(date > glm_date_range[2], 'right', 'none'))) %>%
+      mutate(obs_shoulder = ifelse(date < obs_date_range[1], 'left', ifelse(date > obs_date_range[2], 'right', 'none')))
+    target_num_driver_dates <- sequence_length + (sequence_length - sequence_offset) *
+      floor( # number of whole sequences possible after the first one
+        (nrow(driver_dates) - sequence_length) / # the first sequence is always sequence_length
+          (sequence_length - sequence_offset)) # subsequent sequences each require seq_len-seq_off more obs
+    stopifnot(target_num_driver_dates <= nrow(driver_dates)) # make sure we're not requiring more dates than we have
+    # first drop as many as we can from the righthand side where there are no observations
+    target_drop_driver_dates <- nrow(driver_dates) - target_num_driver_dates
+    if(target_drop_driver_dates > 0) {
+      easy_drops_right <- filter(driver_dates, glm_shoulder == 'right' & obs_shoulder == 'right')
+      drops <- tail(easy_drops_right, min(nrow(easy_drops_right), target_drop_driver_dates)) %>% pull(date)
+      driver_dates <- driver_dates %>% filter(!date %in% drops)
+    }
+    # then drop some from the lefthand side where there are no observations
+    target_drop_driver_dates <- nrow(driver_dates) - target_num_driver_dates
+    if(target_drop_driver_dates > 0) {
+      easy_drops_left <- filter(driver_dates, glm_shoulder == 'left' & obs_shoulder == 'left')
+      drops <- head(easy_drops_left, min(nrow(easy_drops_left), target_drop_driver_dates)) %>% pull(date)
+      driver_dates <- driver_dates %>% filter(!date %in% drops)
+    }
+    # then drop some from the lefthand side for the remaining dates
+    target_drop_driver_dates <- nrow(driver_dates) - target_num_driver_dates
+    if(target_drop_driver_dates > 0) {
+      drops <- head(driver_dates, min(nrow(driver_dates), target_drop_driver_dates)) %>% pull(date)
+      driver_dates <- driver_dates %>% filter(!date %in% drops)
+    }
+    # actually truncate the data
+    return(filter(drivers, date %in% driver_dates$date))
+  }
+  drivers <- truncate_drivers(drivers, glm_preds, obs)
+
+  #### Helpers functions for splitting ####
 
   # function to normalize the driver data into features. We will use this
   # function right after creating the relevant splits. This takes the driver
@@ -212,41 +262,70 @@ split_pgdl_data <- function(tidied, n_lead_dates=100) {
   normalize <- function(driver_split) {
     driver_split %>%
       select(-Ice) %>% # permanently remove the Ice column from the normalized features
-      select(-date) %>% # temporarily remove the date column for scaling
+      select(-date, -depth) %>% # temporarily remove the date column for scaling
       scale() %>%
       as_tibble() %>%
+      tibble::add_column(depth = driver_split$depth, .before=1) %>% # restore the depth column
       tibble::add_column(date = driver_split$date, .before=1) # restore the date column
   }
 
-  # function to restrict the first dataset (could be drivers, glm_preds, or obs)
-  # to those date and Depth rows also represented in the second dataset
-  # (glm_preds or obs), or dates in the n_lead_dates preceding the first
-  # observation in the second dataset. I think (but am not completely sure) that
-  # it's useful to go back in driver data as far as the window width before the
-  # first non-NA obs or GLM prediction (if there are drivers before then),
-  # because this means the first LSTM prediction of those early obs/GLM dates
-  # will be toward the end of a sequence rather than the beginning.
-  restrict_to <- function(dat_full, obs_split, n_lead_dates) {
-    obs_range <- range(obs_split$date)
-    dat_range <- c(obs_range[1] - as.difftime(n_lead_dates, units='days'), obs_range[2])
-    dat_restricted <- dat_full %>%
-      filter(date >= dat_range[1], date <= dat_range[2])
+  # function to truncate a dataset to exactly the date range spanned by the
+  # given dates. unlike truncate_drivers, this function does not also truncate
+  # to an integer number of sequences; that's the job of truncate_drivers() or
+  # calc_padding() + buffer()
+  restrict <- function(dat, to) {
+    date_range <- range(to$date)
+    dat %>% filter(date >= date_range[1], date <= date_range[2])
   }
 
-  # pad dat_restricted to the left with NAs, using dat_full as a template for
-  # the shape (dates, Depths, and column names), and padding with up to
-  # n_lead_dates (but fewer if there aren't that many dates in dat_full)
-  buffer <- function(dat_restricted, dat_full, n_lead_dates) {
-    obs_range <- range(dat_restricted$date)
-    # create a df of same shape as dat_full but with all NAs in columns other
-    # than date and Depth
-    na_mask <- dat_full
-    # teh restricted and buffered data starts with a buffer of NAs and ends with the data as restricted by
-    dat_restricted <- bind_rows(
-      dat_full %>% # select just the buffer region
-        filter(date >= obs_range[1] - as.difftime(n_lead_dates, units='days'), date < obs_range[1]) %>%
-        group_by(date, Depth) %>% mutate_all(funs(.*NA)) %>% ungroup(), # convert values to NAs
-      dat_restricted) # add in the restricted data
+  # pad dat_restricted with NAs so that the output is the length of an integer
+  # number of sequences. Pad to the left as much as possible but no farther than
+  # the available drivers, then pad to the right
+  buffer <- function(dat_restricted) {
+
+    ## Compute Padding ##
+
+    # count dates
+    n_core_dates <- length(unique(dat_restricted$date))
+
+    # count driver dates to the left and right available for buffering
+    n_driver_dates <- length(unique(drivers$date))
+    n_driver_dates_left <- length(unique(filter(drivers, date < min(dat_restricted$date))$date))
+    n_driver_dates_right <- length(unique(filter(drivers, date > max(dat_restricted$date))$date))
+
+    # be realistic about the minimum buffer to the left; can't have more buffer
+    # than we have drivers to the left
+    try_buffer <- sequence_length/2 # seems like half a sequence length would be pretty good
+    min_buffer <- min(try_buffer, n_driver_dates_left)
+
+    # optimistically round up to the nearest number of dates that will fill an
+    # integer number of sequences
+    target_n_dates <- max(n_core_dates + min_buffer, sequence_length) # should be at least sequence_length long
+    target_n_dates <- sequence_length + # there's always one first sequence (see stopifnot above)
+      ceiling((target_n_dates - sequence_length) / sequence_offset) * sequence_offset # add sequences to cover the core dates + min_buffer
+
+    # be realistic about the final buffer; can't have more total length than we
+    # have drivers
+    target_n_dates <- min(target_n_dates, n_driver_dates)
+
+    # compute padding to the left and right, prioritizing padding left first
+    target_n_pad_dates <- target_n_dates - n_core_dates
+    pad_left <- min(n_driver_dates_left, target_n_pad_dates)
+    pad_right <- min(n_driver_dates_right, target_n_pad_dates - pad_left)
+
+    ## Do Padding ##
+
+    dat_range <- range(dat_restricted$date)
+    as_days <- function(n) { as.difftime(n, units='days') }
+    no_date <- Sys.Date()[c()]
+    pad_left_dates <- if(pad_left > 0) seq(dat_range[1] - as_days(pad_left), dat_range[1] - as_days(1), by=as_days(1)) else no_date
+    pad_right_dates <- if(pad_right > 0) seq(dat_range[2] + as_days(1), dat_range[2] + as_days(pad_right), by=as_days(1)) else no_date
+    dat_padded <- tibble::tibble(date = c(pad_left_dates, pad_right_dates), depth = 0) %>%
+      tidyr::complete(date, depth = sort(unique(dat_restricted$depth))) %>%
+      bind_rows(dat_restricted) %>% # add the data rows, filling in the padding data columns with NAs
+      arrange(date, depth) # sort to chronological order
+
+    return(dat_padded)
   }
 
   # function to generate an observation mask with 1s where an observation is
@@ -255,7 +334,7 @@ split_pgdl_data <- function(tidied, n_lead_dates=100) {
     obs_split %>%
       transmute(
         date = date,
-        Depth = Depth,
+        depth = depth,
         Multiplier = ifelse(is.na(TempC), 0, 1))
   }
 
@@ -267,47 +346,38 @@ split_pgdl_data <- function(tidied, n_lead_dates=100) {
       select(labels, date) # don't require equal Depth because features$Depth is normalized
     ))
     stopifnot(all.equal(
-      select(labels, date, Depth),
-      select(mask, date, Depth)
+      select(labels, date, depth),
+      select(mask, date, depth)
     ))
   }
+
+  #### Create data splits ####
 
   # Initialize an R list where we'll keep all the dataset splits
   datasets <- list()
 
   # For unsupervised learning, always use the full driver dataset (normalized
   # and unnormalized), but exclude days without Ice information because these
-  # can't be tested for energy conservation. Do this both in pretraining and in
-  # fine tuning (to prevent unrealistic states or budget closure during both
-  # phases)
-  datasets$unsup$physics <- restrict_to(drivers, filter(drivers, !is.na(Ice)), 0)
+  # can't be tested for energy conservation. Use the full dataset both in
+  # pretraining and in fine tuning, to prevent unrealistic states or budget
+  # closure during both phases
+  datasets$unsup$physics <- truncate_drivers(filter(drivers, !is.na(Ice)), glm_preds, obs)
   datasets$unsup$features <- normalize(datasets$unsup$physics)
 
   # Pretrain on the full GLM predictions dataset (even though there could be
   # situations where the prediction in a specific year gets worse because we're
   # training on 1979 and climate has changed)
-  glm_non_na <- filter(glm_preds, !is.na(TempC))
-  # labels: extend up to n_lead_dates before the first non-NA GLM prediction
-  datasets$pretrain$labels <- restrict_to(glm_preds, glm_non_na, n_lead_dates)
+  datasets$pretrain$labels <- glm_preds %>%
+    restrict(filter(glm_preds, !is.na(TempC))) %>%
+    buffer()
   datasets$pretrain$mask <- mask(datasets$pretrain$labels)
-  # features: make these match the shape of the pretrain$labels exactly, then normalize
-  datasets$pretrain$features <- restrict_to(drivers, datasets$pretrain$labels, 0) %>%
+  datasets$pretrain$features <- drivers %>%
+    restrict(datasets$pretrain$labels) %>%
     normalize()
-  # double check the dimensions
   require_equal_dims(datasets$pretrain$features, datasets$pretrain$labels, datasets$pretrain$mask)
-
-  # For testing, hyperparameter tuning, and training = fine tuning, split things differently depending on how many observation
-  # dates are available
-  obs_non_na <- filter(obs, !is.na(TempC))
-  obs_dates <- sort(unique(obs_non_na$date))
-  obs_dates_rev <- rev(obs_dates)
-  n_obs_dates <- length(obs_dates)
 
   #' Slice the obs and drivers into labels, mask, and features for one
   #' application (probably test, tune, or train)
-  #'
-  #' assumes availability of obs, drivers, obs_dates, obs_dates_rev, and
-  #' n_lead_dates
   #'
   #' @param low_obs_num the index of the first observation to include (counting
   #'   first from the left and then from the right)
@@ -315,7 +385,10 @@ split_pgdl_data <- function(tidied, n_lead_dates=100) {
   #'   desired, this is the index of the final observation to include in each
   #'   shoulder (counting first from the left for shoulder 1 and then from the
   #'   right for shoulder 2)
-  slice_labels_features_mask <- function(low_obs_num, high_obs_num) {
+  slice_labels_features_mask <- function(obs, drivers, low_obs_num, high_obs_num) {
+    obs_non_na <- filter(obs, !is.na(TempC))
+    obs_dates <- sort(unique(obs_non_na$date))
+    obs_dates_rev <- rev(obs_dates)
 
     one_slice <- list(labels=NA, mask=NA, features=NA)
 
@@ -333,17 +406,18 @@ split_pgdl_data <- function(tidied, n_lead_dates=100) {
       }
       # pick out the two shoulders worth of labels
       one_slice$labels <- list(
-        left = obs_non_na %>% filter(date >= date_cutoffs[1] & date <= date_cutoffs[2]) %>%
-          restrict_to(obs, ., 0) %>%
-          buffer(obs, n_lead_dates),
-        right = obs_non_na %>% filter(date >= date_cutoffs[3] & date <= date_cutoffs[4]) %>%
-          restrict_to(obs, ., 0) %>%
-          buffer(obs, n_lead_dates))
+        left =  obs %>%
+          restrict(filter(obs_non_na, date >= date_cutoffs[1] & date <= date_cutoffs[2])) %>%
+          buffer(),
+        right = obs %>%
+          restrict(filter(obs_non_na, date >= date_cutoffs[3] & date <= date_cutoffs[4])) %>%
+          buffer())
       # pick out the two shoulders worth of features (based on the labels
       # shoulders) and bind them together
       one_slice$features <- bind_rows(
-        left = restrict_to(drivers, one_slice$labels$left, 0) %>% normalize(),
-        right = restrict_to(drivers, one_slice$labels$right, 0) %>% normalize())
+        left = restrict(drivers, one_slice$labels$left),
+        right = restrict(drivers, one_slice$labels$right)) %>%
+        normalize()
       # bind together the two shoulders worth of labels
       one_slice$labels <- bind_rows(one_slice$labels)
 
@@ -358,11 +432,12 @@ split_pgdl_data <- function(tidied, n_lead_dates=100) {
         stop(paste0('obs_nums imply non-increasing series of dates: ', paste0(date_cutoffs, collapse=', ')))
       }
       # pick out the labels
-      one_slice$labels <- obs_non_na %>% filter(date >= date_cutoffs[1] & date <= date_cutoffs[2]) %>%
-        restrict_to(obs, ., 0) %>%
-        buffer(obs, n_lead_dates)
+      one_slice$labels <- obs %>%
+        restrict(filter(obs_non_na, date >= date_cutoffs[1] & date <= date_cutoffs[2])) %>%
+        buffer()
       # pick out the features based on the labels
-      one_slice$features <- restrict_to(drivers, one_slice$labels, 0) %>% normalize()
+      one_slice$features <- restrict(drivers, one_slice$labels) %>%
+        normalize()
     }
 
     # compute the mask based on the labels
@@ -375,40 +450,58 @@ split_pgdl_data <- function(tidied, n_lead_dates=100) {
     return(one_slice)
   }
 
-  # TODO we could use the pretrain data for datasets$tune (hyperparameter
-  # tuning), in which case we'd want to not allocate any real obs to tuning
-  # below. But for now we're allocating some obs to hyperparameter tuning.
-
-  if(n_obs_dates <= 60) {
-    # If there are fewer than 60 obs dates, use no test or tuning obs (or maybe
-    # these will already have been dropped from the priority lakes list). As
-    # with the GLM predictions, extend the drivers and observations up to
-    # n_lead_dates before the first non-NA observation to allow the PGDL
-    # sequence to warm up
-    datasets$test <- NULL
-    datasets$tune <- NULL
-    datasets$train <- slice_labels_features_mask(1, NA)
-
-  } else if(n_obs_dates <= 100) {
-    # If there are 61 to 100 obs dates, only use 30 test obs, 30 tune obs that
-    # overlap with training dataset, and remainder for training (between 30 and
-    # 70)
-    datasets$test <- slice_labels_features_mask(1, 15)
-    datasets$tune <- slice_labels_features_mask(16, 30)
-    datasets$train <- slice_labels_features_mask(16, NA)
-
-  } else if(n_obs_dates <= 200) {
-    # If there are 101-200 obs dates, use 30 test obs, 20 tune obs + 10 obs
-    # overlapping with training, remainder for training (51+)
-    datasets$test <- slice_labels_features_mask(1, 15)
-    datasets$tune <- slice_labels_features_mask(16, 30)
-    datasets$train <- slice_labels_features_mask(26, NA)
-
+  # For hyperparameter tuning (tune-training and tune-testing), use the GLM
+  # predictions
+  n_glm_dates <- glm_preds %>%
+    filter(!is.na(TempC)) %>%
+    pull(date) %>%
+    unique() %>%
+    length()
+  if(n_glm_dates <= 60) {
+    # <60 GLM dates: no hyperparameter tuning
+    stop(sprintf('only %d GLM prediction dates!?! Hard to tune hyperparameters on that', n_glm_dates))
+  } else if(n_glm_dates <= 100) {
+    # 61-100 GLM dates: 30 test obs, remainder (31-70) for training
+    datasets$tune$train <- slice_labels_features_mask(glm_preds, drivers, 16, NA)
+    datasets$tune$test <- slice_labels_features_mask(glm_preds, drivers, 1, 15)
+  } else if(n_glm_dates <= 200) {
+    # 101-200 GLM dates: 40 test obs, remainder (61-160) for training
+    datasets$tune$train <- slice_labels_features_mask(glm_preds, drivers, 21, NA)
+    datasets$tune$test <- slice_labels_features_mask(glm_preds, drivers, 1, 20)
+  } else if(n_glm_dates <= 400) {
+    # 201-400 GLM dates: 50 test obs, remainder (151-350) for training
+    datasets$tune$train <- slice_labels_features_mask(glm_preds, drivers, 26, NA)
+    datasets$tune$test <- slice_labels_features_mask(glm_preds, drivers, 1, 25)
   } else {
-    # If there are 201+ obs dates, use 50 test, 50 tune, remainder for training (101+)
-    datasets$test <- slice_labels_features_mask(1, 25)
-    datasets$tune <- slice_labels_features_mask(26, 50)
-    datasets$train <- slice_labels_features_mask(51, NA)
+    # 401+ GLM dates: 100 test obs, remainder (301+) for training. this should be
+    # by far the most common case, because we usually have many GLM predictions
+    datasets$tune$train <- slice_labels_features_mask(glm_preds, drivers, 51, NA)
+    datasets$tune$test <- slice_labels_features_mask(glm_preds, drivers, 1, 50)
+  }
+
+  # For training (= fine tuning) and final testing, split the observations
+  # differently depending on how many observation dates are available
+  n_obs_dates <- obs %>%
+    filter(!is.na(TempC)) %>%
+    pull(date) %>%
+    unique() %>%
+    length()
+  if(n_obs_dates <= 60) {
+    # <60 obs dates: no test obs, everything for training
+    datasets$train <- slice_labels_features_mask(obs, drivers, 1, NA)
+    datasets$test <- NULL
+  } else if(n_obs_dates <= 100) {
+    # 61-100 obs dates: 30 test obs, remainder (31-70) for training
+    datasets$train <- slice_labels_features_mask(obs, drivers, 16, NA)
+    datasets$test <- slice_labels_features_mask(obs, drivers, 1, 15)
+  } else if(n_obs_dates <= 200) {
+    # 101-200 obs dates: 40 test obs, remainder (61-160) for training
+    datasets$train <- slice_labels_features_mask(obs, drivers, 21, NA)
+    datasets$test <- slice_labels_features_mask(obs, drivers, 1, 20)
+  } else {
+    # 201+ obs dates: 50 test obs, remainder (151+) for training
+    datasets$train <- slice_labels_features_mask(obs, drivers, 26, NA)
+    datasets$test <- slice_labels_features_mask(obs, drivers, 1, 25)
   }
 
   # For prediction, use the full driver dataset (no need to restrict to just
@@ -417,7 +510,7 @@ split_pgdl_data <- function(tidied, n_lead_dates=100) {
 
   return(datasets)
 }
-splits <- split_pgdl_data(tidied, n_lead_dates=100)
+splits <- split_pgdl_data(tidied, sequence_length=200)
 
 summarize_pgdl_split <- function(splits, tidied) {
   split_obs_dates <-
@@ -485,37 +578,102 @@ plot_pgdl_split_days(splits, tidied)
 #'
 #' dim(obs) = dim(glm_preds) dim(mask) = dim(obs)
 #'
-#' x_train_1: Input data for supervised learning
-#' y_train_1: Observations for supervised learning
-#' m_train_1: Observation mask for supervised learning
-#' x_f: Normalized input data for unsupervised learning
-#' p_f: Unnormalized input data for unsupervised learning (p = physics) = concat(p_train_1, p_test)
-#' x_test: Inputs data for testing
-#' y_test: Observations for testing
-#' m_test: Observation mask for testing
-#' depth_areas: cross-sectional area of each depth
+#' x_train_1: Input data for supervised learning y_train_1: Observations for
+#' supervised learning m_train_1: Observation mask for supervised learning x_f:
+#' Normalized input data for unsupervised learning p_f: Unnormalized input data
+#' for unsupervised learning (p = physics) = concat(p_train_1, p_test) x_test:
+#' Inputs data for testing y_test: Observations for testing m_test: Observation
+#' mask for testing depth_areas: cross-sectional area of each depth
 #'
-#' @param inputs an R list of data
-#' @param batch_size the maximum size per batch (will be adjusted downward to
-#'   produce even-sized batches given actual data availaiblity)
+#' @param splits an R list of data
+#' @param batch_size the maximum number of dates in the supervised data per
+#'   batch (bigger batches will be used for the unsupervised data so that the
+#'   number of batches can be equal)
 #' @param sequence_length the number of dates per timeseries sequence passed in
 #'   as a training example
 #' @param sequence_offset the number of dates by which each subsequent sequence
 #'   lags behind the previous sequence (per date)
-reshape_data_for_pgdl <- function(inputs, batch_size, sequence_length) {
+reshape_data_for_pgdl <- function(splits, tidied, batch_size=1000, sequence_length, sequence_offset=sequence_length/2) {
 
-  # Extract the date-time dimension names
-  dates <- drivers$date
-  driver_names_norm <- sprintf('%sNorm', names(select(drivers, -date, -Ice))) # normalized drivers
-  driver_names_phys <- names(select(drivers, -date)) # drivers in physical units
-  # depths <- sort(unique(glm_preds$Depth)) # this was done above to use in munging the glm_preds, observations, and geometry
-
-  # Define the dimension sizes
-  n_dates <- length(dates)
+  depths <- tidied$geometry$Depth
   n_depths <- length(depths)
 
-  n_drivers_phys <- length(driver_names_norm)
-  n_drivers_norm <- length(driver_names_phys)
+  lapply(splits[c('pretrain','test','tune','train')], function(one_split) {
+    # compute the number of batches relative to the number of dates in the
+    # supervised feature data
+    n_batches <- length(unique(one_split$features$date)) / batch_size
+    stopifnot(n_batches %% 1 == 0) # n_batches should be an integer
+    lapply(
+      c(one_split, list(unsup_features = splits$unsup$features, unsup_physics = splits$unsup$physics)),
+      function(split_element) {
+        # split the split_element into multiple batches. the number of
+        # observations in each batch (1) depends on the number of depths and (2)
+        # will differ for the unsup_ data compared to the supervised versions.
+        # so compute batch_n_row based on n_batches here.
+        element_batch_n_row <- n_depths * length(unique(split_element$date)) / n_batches
+        element_batches <- lapply(seq_len(n_batches), function(batch_i) {
+          element_batch_rows <- (batch_i-1)*element_batch_n_row + c(
+            # start the batch a little early to overlap with preceding batches
+            # so that the number of sequences covering each data row will be
+            # equal, even when the data row is near the break between two
+            # batches
+            start = if(batch_i == 1) 1 else 1 - n_depths * (sequence_length - sequence_offset),
+            end = element_batch_n_row)
+          split_element[element_batch_rows[1]:element_batch_rows[2],]
+        })
+        # now take each batch for this element of the split, and reformat into
+        # an array
+        lapply(element_batches, reshape_batch_for_pgdl, depths, n_depths, sequence_length, sequence_offset)
+      })
+  })
 
+}
 
+depths <- tidied$geometry$Depth
+n_depths <- length(depths)
+dat <- splits$train$features
+sequence_length <- 200
+sequence_offset <- 100
+reshape_batch_for_pgdl <- function(dat, depths, n_depths, sequence_length, sequence_offset) {
+
+  three_dimensional <- 'ShortWave' %in% names(dat)
+  dates <- unique(dat$date)
+  num_sequences <- 1 + (length(dates) - sequence_length)/sequence_offset
+  stopifnot(num_sequences %% 1 == 0) # must be an integer
+
+  seq_arrs <- lapply(seq_len(num_sequences), function(seq_i) {
+    seq_dates <- dates[(seq_i-1)*sequence_offset + 1:sequence_length]
+    seq_df <- dat %>%
+      filter(dplyr::between(date, head(seq_dates, 1), tail(seq_dates, 1)))
+    if(three_dimensional) {
+      seq_arr <- array(
+        data = NA,
+        dim = c(depth=n_depths, date=sequence_length, feature=length(dim3_vars)),
+        dimnames = list(depths, format(seq_dates, '%Y-%m-%d'), dim3_vars))
+    } else {
+      seq_arr <- array(
+        data = NA,
+        dim = c(depth=n_depths, date=sequence_length),
+        dimnames = list(depths, format(seq_dates, '%Y-%m-%d')))
+    }
+    dim3_vars <- names(select(seq_df, -date, -Depth))
+    for(var_j in dim3_vars) {
+      seq_layer <- seq_df %>%
+        arrange(date, Depth) %>%
+        mutate(date = format(date, '%Y-%m-%d')) %>%
+        select(date, Depth, !!var_j) %>%
+        spread(date, !!var_j) %>%
+        select(-Depth) %>%
+        as.matrix()
+      dimnames(seq_layer)[[1]] <- paste(seq_i, depths, sep='_')
+      if(three_dimensional) {
+        seq_arr[,,var_j] <- seq_layer
+      } else {
+        seq_arr[,] <- seq_layer
+      }
+    }
+    return(seq_arr)
+  })
+  all_seq_arr <- do.call(abind, c(seq_arrs[1], list(along=1)))
+  attr(all_seq_arr, 'dim') <- setNames(attr(all_seq_arr, 'dim'), names(attr(seq_arrs[[1]], 'dim')))
 }
