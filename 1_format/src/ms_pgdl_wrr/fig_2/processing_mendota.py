@@ -8,8 +8,8 @@ Created on Thu Dec  6 10:45:53 2018
 import pandas as pd
 import numpy as np
 
-feat = pd.read_feather('fig_2/in/jordan/mendota_meteo.feather')
-glm = pd.read_feather('fig_2/in/jordan/Mendota_temperatures.feather')
+feat = pd.read_feather('mille/data/jordan/mendota_meteo.feather')
+glm = pd.read_feather('mille/data/jordan/Mendota_temperatures.feather')
 
 feat.columns
 feat.values
@@ -17,12 +17,12 @@ feat.values.shape
 
 
 # import previous data
-x_full_o = np.load('fig_2/in/xiaowei/processed_features.npy')
-x_raw_full_o = np.load('fig_2/in/xiaowei/features.npy')
-diag_full_o = np.load('fig_2/in/xiaowei/diag.npy')
-obs_o = np.load('fig_2/in/xiaowei/Obs_temp.npy')
-label_o = np.load('fig_2/in/xiaowei/labels.npy')
-dates_o = np.load('fig_2/in/xiaowei/dates.npy') # 10592
+x_full_o = np.load('mille/data/processed_features.npy')
+x_raw_full_o = np.load('mille/data/xiaowei/features.npy')
+diag_full_o = np.load('mille/data/xiaowei/diag.npy')
+obs_o = np.load('mille/data/xiaowei/Obs_temp.npy')
+label_o = np.load('mille/data/xiaowei/labels.npy')
+dates_o = np.load('mille/data/xiaowei/dates.npy') # 10592
 
 ## SKIP THIS ------------ match with previous data
 #new_date = feat.values[:,0]
@@ -39,7 +39,7 @@ dates_o = np.load('fig_2/in/xiaowei/dates.npy') # 10592
 # create x_full, x_raw_full, diag_full, label(glm)
 x_raw_full = feat.values[1:,1:]  # start from the second day
 new_dates = feat.values[1:,0]
-np.save('fig_2/in/xiaowei/dates_mendota.npy',new_dates)
+np.save('mille/data/xiaowei/dates_mendota.npy',new_dates)
 
 
 n_steps = x_raw_full.shape[0]
@@ -67,14 +67,14 @@ for i in range(x_raw_full.shape[0]):
         for k in range(x_raw_full.shape[2]):
             x_raw_full_new[i,j,k] = x_raw_full[i,j,k]
 
-np.save('fig_2/in/xiaowei/features_mendota.npy',x_raw_full_new)
-x_raw_full = np.load('fig_2/in/xiaowei/features_mendota.npy')
+np.save('mille/data/xiaowei/features_mendota.npy',x_raw_full_new)
+x_raw_full = np.load('mille/data/xiaowei/features_mendota.npy')
 
 # standardize features
 from sklearn import preprocessing
 x_full = preprocessing.scale(np.reshape(x_raw_full,[n_depths*n_steps,x_raw_full.shape[-1]]))
 x_full = np.reshape(x_full,[n_depths,n_steps,x_full.shape[-1]])
-np.save('fig_2/in/xiaowei/processed_features_mendota.npy',x_full)
+np.save('mille/data/xiaowei/processed_features_mendota.npy',x_full)
 
 
 # label_glm
@@ -86,7 +86,7 @@ for i in range(n_depths):
     for j in range(n_steps):
         labels[i,j] = glm_new[i,j]
 
-np.save('fig_2/in/xiaowei/labels_mendota.npy',labels)
+np.save('mille/data/xiaowei/labels_mendota.npy',labels)
 
 
 # phy files ------------------------------------------------------------
@@ -112,7 +112,7 @@ diag = np.zeros([n_depths, n_steps, 3], dtype=np.float64)
 for i in range(n_depths):
     for j in range(n_steps):
         diag[i,j,:] = diag_sel[i,j,:]
-np.save('fig_2/in/xiaowei/diag_mendota.npy',diag)
+np.save('mille/data/xiaowei/diag_mendota.npy',diag)
 
 
 
