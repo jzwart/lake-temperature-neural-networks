@@ -1,18 +1,6 @@
+# 1_format.yml
 geometry_yeti_path: '/cxfs/projects/usgs/water/iidd/data-sci/lake-temp/geometry'
 glm_preds_yeti_path: '/cxfs/projects/usgs/water/iidd/data-sci/lake-temp/glm-preds'
 drivers_yeti_path: '/cxfs/projects/usgs/water/iidd/data-sci/lake-temp/driver-data'
 drivers_time: '0.350500'
-
-# combine_nn_data
-min_obs_per_depth: 100
-min_obs_per_date: 1
-
-# format_nn_data
-structure: 'NN'
-
-# split_scale_nn_data
-dev_frac: 0.20
-test_frac: 0.20
-
-# 2_model
-model_functions: ['run_model_01', 'run_model_02']
+pgdl_inputs_yeti_path: '/cxfs/projects/usgs/water/iidd/data-sci/lake-temp/pgdl-inputs'
