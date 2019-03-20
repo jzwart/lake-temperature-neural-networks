@@ -1,13 +1,20 @@
 target_default: 1_format
 
 packages:
+  - abind
   - dplyr
   - feather
   - fst
   - googledrive
+  - progress
   - purrr
   - readr
+  - reticulate
   - scipiper
+  - stringr
+  - syncr
+  - tibble
+  - tidyr
   - yaml
   - zeallot
 
@@ -15,22 +22,17 @@ sources:
   - lib/src/utils.R
   - 1_format/src/calculate_priority_lakes.R
   - 1_format/src/splitters.R
+  - 1_format/src/combiners.R
   - 1_format/src/format_tasks.R
 
 targets:
   1_format:
     depends:
-      - 1_format/log/1_format_tasks.ind
+      - 1_format/log/input_files.ind
 
   # read and subset the project/user settings
   settings:
     command: yaml.load_file('lib/cfg/settings.yml')
-  combine_cfg:
-    command: settings[I(c('min_obs_per_depth', 'min_obs_per_date'))]
-  format_cfg:
-    command: settings[I(c('structure'))]
-  split_scale_cfg:
-    command: settings[I(c('dev_frac', 'test_frac'))]
   geometry_yeti_path:
     command: settings[[I(c('geometry_yeti_path'))]]
   glm_preds_yeti_path:
@@ -39,6 +41,8 @@ targets:
     command: settings[[I(c('drivers_yeti_path'))]]
   drivers_time:
     command: settings[[I(c('drivers_time'))]]
+  pgdl_inputs_yeti_path:
+    command: settings[[I(c('pgdl_inputs_yeti_path'))]]
 
   #### Retrieve files needed to select priority lakes ####
 
@@ -136,10 +140,29 @@ targets:
   #### prepare PGDL data for priority lakes ####
 
   format_data_task_plan:
-    command: create_format_task_plan(priority_lakes, ind_dir = I("1_format"))
+    command: create_format_task_plan(
+      priority_lakes,
+      obs_tmpind = '1_format/tmp/obs.tmpind',
+      geometry_tmpind = '1_format/tmp/geometry.tmpind',
+      glm_preds_tmpind = '1_format/tmp/glm_preds.tmpind',
+      drivers_tmpind = '1_format/tmp/drivers.tmpind')
+
+  upload_yeti_data:
+    command: get_yeti_uploader(
+      src_dir = I('1_format/tmp/pgdl_inputs'),
+      yeti_path = pgdl_inputs_yeti_path)
 
   1_format_tasks.yml:
-    command: create_format_task_makefile(task_plan = format_data_task_plan, makefile = target_name, ind_complete=TRUE)
+    command: create_format_task_makefile(
+      makefile = target_name,
+      task_plan = format_data_task_plan)
 
-  1_format/log/1_format_tasks.ind:
-    command: loop_tasks(task_plan = format_data_task_plan, task_makefile = '1_format_tasks.yml', num_tries=1)
+  1_format/log/input_files.ind:
+    command: scmake(I('input_files.ind_promise'), remake_file='1_format_tasks.yml', force=TRUE)
+
+  #1_format/out/pgdl_inputs.ind:
+  #  command: retrieve_lake_data(
+  #    out_ind = target_name,
+  #    priority_lakes = priority_lakes,
+  #    file_column = I('glm_preds_file'),
+  #    yeti_path = glm_preds_yeti_path)
