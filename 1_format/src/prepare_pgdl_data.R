@@ -17,6 +17,8 @@
 # m_test: Observation mask for testing
 # depth_areas: cross-sectional area of each depth
 
+#' Munge, organize, and interpolate the input data from other pipelines into a
+#' list of four long-format tibbles
 tidy_pgdl_data <- function(
   lake_id = 'nhd_1099476',
   drivers_file = '1_format/tmp/drivers/NLDAS_time[0.350500]_x[254]_y[160].csv',
@@ -183,17 +185,18 @@ tidy_pgdl_data <- function(
     geometry = geometry
   ))
 }
-tidied <- tidy_pgdl_data()
 
 #' Split into training, tuning, and testing sets, then normalize
 #'
+#' Each split should contain an integer number of sequences
+#'
 #' @param tidied list containing long-form drivers, glm_preds, obs, and geometry
-#' @param sequence_length even integer number of dates within each sequence to
-#'   be fed to the NN. In this function, sequence_length is only used to produce
-#'   splits that are at least 1 sequence length long and a multiple of
-#'   sequence_length/2 long (so that data can be reorganized into 1+ sequences
-#'   that overlap by 50% in the next function).
-split_pgdl_data <- function(tidied, sequence_length=200, sequence_offset=100, n_lead_dates=100) {
+#' @param sequence_length integer number of dates within each sequence to be fed
+#'   to the NN. In this function, sequence_length is only used to produce splits
+#'   that are an even number of sequences long.
+#' @param sequence_offset integer number of dates by which each sequence should
+#'   lag behind its predecessor
+split_pgdl_data <- function(tidied, sequence_length, sequence_offset) {
 
   # unpack the R list
   drivers <- tidied$drivers %>%
@@ -510,7 +513,6 @@ split_pgdl_data <- function(tidied, sequence_length=200, sequence_offset=100, n_
 
   return(datasets)
 }
-splits <- split_pgdl_data(tidied, sequence_length=200)
 
 summarize_pgdl_split <- function(splits, tidied) {
   split_obs_dates <-
@@ -543,7 +545,6 @@ summarize_pgdl_split <- function(splits, tidied) {
 
   split_obs_dates
 }
-summarize_pgdl_split(splits, tidied)
 
 plot_pgdl_split_days <- function(splits, tidied) {
   split_obs_dates <-
@@ -564,7 +565,6 @@ plot_pgdl_split_days <- function(splits, tidied) {
     ylab('') + theme_classic() + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
     facet_grid(Type ~ ., scales='free_y')
 }
-plot_pgdl_split_days(splits, tidied)
 
 #' Reshape tibbles to PGDL-ready format
 #'
@@ -593,7 +593,9 @@ plot_pgdl_split_days(splits, tidied)
 #'   as a training example
 #' @param sequence_offset the number of dates by which each subsequent sequence
 #'   lags behind the previous sequence (per date)
-reshape_data_to_sequences <- function(splits, depths, sequence_length, sequence_offset=sequence_length/2) {
+reshape_data_to_sequences <- function(splits, depths, sequence_length, sequence_offset) {
+
+  n_depths <- length(depths)
 
   # create matrices for everything except for unsup and predict
   lapply(setNames(nm=names(splits)), function(phase_name) {
@@ -681,12 +683,48 @@ reshape_sequence_to_array <- function(sequence, depths) {
   return(seq_arr)
 }
 
-system.time({
-  sequences <- reshape_data_to_sequences(splits, tidied$geometry$Depth, sequence_length, sequence_offset)
-})
+#' Combines all of the above functions
+prep_pgdl_data_R <- function(
+  lake_id = 'nhd_1099476',
+  obs_file = '1_format/tmp/obs/nhd_1099476_obs.fst',
+  geometry_file = '1_format/tmp/geometry/nhd_1099476_geometry.csv',
+  glm_preds_file = '1_format/tmp/glm_preds/nhd_1099476_temperatures.feather',
+  drivers_file = '1_format/tmp/drivers/NLDAS_time[0.350500]_x[254]_y[160].csv',
+  # these defaults are where sequence_length and sequence_offset get configured:
+  sequence_length = 200,
+  sequence_offset = 100) {
+
+  # munge from inputs from other pipelines into long-form data
+  tidied <- tidy_pgdl_data(lake_id, drivers_file, geometry_file, glm_preds_file, obs_file)
+
+  # munge from long-form data into lists of long-form datasets split by test,
+  # train, pretrain, etc.
+  splits <- split_pgdl_data(tidied, sequence_length, sequence_offset)
+
+  # optional diagnostics to investigate the results of splitting
+  # summarize_pgdl_split(splits, tidied)
+  # plot_pgdl_split_days(splits, tidied)
+
+  # munge from long data to arrays. runtime reduced from 330 down to 150 seconds
+  # for a test lake, but this is still the slow step
+  system.time({
+    sequences <- reshape_data_to_sequences(splits, tidied$geometry$Depth, sequence_length, sequence_offset)
+  })
+
+  # combine into a single list for saving in remake
+  return(list(sequences=sequences, geometry=tidied$geometry))
+}
 
 
-save_data_to_np <- function(sequences, geometry, data_file) {
+#' Write R objects to python .npz file
+#'
+#' @param r_data R list of input sequences and geometry data
+#' @param data_file path and filename of .npz file
+save_data_to_np <- function(r_data, data_file) {
+
+  # start to unpack the list of R datasets
+  sequences <- r_data$sequences
+  geometry <- r_data$geometry
 
   # flatten each list of arrays into a big array with dim+1, and flatten the
   # nested phase-element lists into one list. result is a list of
@@ -705,6 +743,7 @@ save_data_to_np <- function(sequences, geometry, data_file) {
 
   # save the whole list as a big .npz file (one numpy "file" per element in
   # data_list)
+  np <- reticulate::import('numpy')
+  if(!dir.exists(dirname(data_file))) dir.create(dirname(data_file))
   do.call(np$savez_compressed, c(list(file = data_file), data_list)) # compression saves about 96% of the space
 }
-save_data_to_np(sequences, geometry)
