@@ -197,7 +197,7 @@ split_pgdl_data <- function(tidied, sequence_length=200, sequence_offset=100, n_
 
   # unpack the R list
   drivers <- tidied$drivers %>%
-    mutate(Depth = depth) # copy into column to keep Depth as a predictor, not just a dimension
+    tibble::add_column(Depth = tidied$drivers$depth, .after='depth') # copy into column to keep Depth as a predictor, not just a dimension
   glm_preds <- tidied$glm_preds
   obs <- tidied$obs
   geometry <- tidied$geometry
@@ -301,7 +301,7 @@ split_pgdl_data <- function(tidied, sequence_length=200, sequence_offset=100, n_
     # optimistically round up to the nearest number of dates that will fill an
     # integer number of sequences
     target_n_dates <- max(n_core_dates + min_buffer, sequence_length) # should be at least sequence_length long
-    target_n_dates <- sequence_length + # there's always one first sequence (see stopifnot above)
+    target_n_dates <- sequence_length + # there's always one first sequence (see previous line)
       ceiling((target_n_dates - sequence_length) / sequence_offset) * sequence_offset # add sequences to cover the core dates + min_buffer
 
     # be realistic about the final buffer; can't have more total length than we
@@ -342,8 +342,8 @@ split_pgdl_data <- function(tidied, sequence_length=200, sequence_offset=100, n_
   # data.frames
   require_equal_dims <- function(features, labels, mask) {
     stopifnot(all.equal(
-      select(features, date),
-      select(labels, date) # don't require equal Depth because features$Depth is normalized
+      select(features, date, depth),
+      select(labels, date, depth)
     ))
     stopifnot(all.equal(
       select(labels, date, depth),
@@ -462,21 +462,21 @@ split_pgdl_data <- function(tidied, sequence_length=200, sequence_offset=100, n_
     stop(sprintf('only %d GLM prediction dates!?! Hard to tune hyperparameters on that', n_glm_dates))
   } else if(n_glm_dates <= 100) {
     # 61-100 GLM dates: 30 test obs, remainder (31-70) for training
-    datasets$tune$train <- slice_labels_features_mask(glm_preds, drivers, 16, NA)
-    datasets$tune$test <- slice_labels_features_mask(glm_preds, drivers, 1, 15)
+    datasets$tune_train <- slice_labels_features_mask(glm_preds, drivers, 16, NA)
+    datasets$tune_test <- slice_labels_features_mask(glm_preds, drivers, 1, 15)
   } else if(n_glm_dates <= 200) {
     # 101-200 GLM dates: 40 test obs, remainder (61-160) for training
-    datasets$tune$train <- slice_labels_features_mask(glm_preds, drivers, 21, NA)
-    datasets$tune$test <- slice_labels_features_mask(glm_preds, drivers, 1, 20)
+    datasets$tune_train <- slice_labels_features_mask(glm_preds, drivers, 21, NA)
+    datasets$tune_test <- slice_labels_features_mask(glm_preds, drivers, 1, 20)
   } else if(n_glm_dates <= 400) {
     # 201-400 GLM dates: 50 test obs, remainder (151-350) for training
-    datasets$tune$train <- slice_labels_features_mask(glm_preds, drivers, 26, NA)
-    datasets$tune$test <- slice_labels_features_mask(glm_preds, drivers, 1, 25)
+    datasets$tune_train <- slice_labels_features_mask(glm_preds, drivers, 26, NA)
+    datasets$tune_test <- slice_labels_features_mask(glm_preds, drivers, 1, 25)
   } else {
     # 401+ GLM dates: 100 test obs, remainder (301+) for training. this should be
     # by far the most common case, because we usually have many GLM predictions
-    datasets$tune$train <- slice_labels_features_mask(glm_preds, drivers, 51, NA)
-    datasets$tune$test <- slice_labels_features_mask(glm_preds, drivers, 1, 50)
+    datasets$tune_train <- slice_labels_features_mask(glm_preds, drivers, 51, NA)
+    datasets$tune_test <- slice_labels_features_mask(glm_preds, drivers, 1, 50)
   }
 
   # For training (= fine tuning) and final testing, split the observations
@@ -515,9 +515,10 @@ splits <- split_pgdl_data(tidied, sequence_length=200)
 summarize_pgdl_split <- function(splits, tidied) {
   split_obs_dates <-
     bind_rows(mutate(tidied$obs, Type='Obs'),
+              mutate(splits$tune_train$labels, Type='Tune-Train'),
+              mutate(splits$tune_test$labels, Type='Tune-Test'),
               mutate(splits$pretrain$labels, Type='Pretrain'),
               mutate(splits$train$labels, Type='Train'),
-              mutate(splits$tune$labels, Type='Tune'),
               mutate(splits$test$labels, Type='Test')) %>%
     group_by(Type, date) %>%
     summarize(
@@ -547,14 +548,15 @@ summarize_pgdl_split(splits, tidied)
 plot_pgdl_split_days <- function(splits, tidied) {
   split_obs_dates <-
     bind_rows(mutate(tidied$obs, Type='Obs'),
+              mutate(splits$tune_train$labels, Type='Tune-Train'),
+              mutate(splits$tune_test$labels, Type='Tune-Test'),
               mutate(splits$pretrain$labels, Type='Pretrain'),
               mutate(splits$train$labels, Type='Train'),
-              mutate(splits$tune$labels, Type='Tune'),
               mutate(splits$test$labels, Type='Test')) %>%
     group_by(date, Type) %>%
     summarize(obs_date = any(!is.na(TempC))) %>%
     ungroup() %>%
-    mutate(Type = ordered(Type, levels=c('Pretrain','Obs','Train','Tune','Test')))
+    mutate(Type = ordered(Type, levels=c('Tune-Train','Tune-Test','Pretrain','Obs','Train','Test')))
   ggplot(split_obs_dates, aes(x=date, y=1)) +
     geom_point(shape=NA) +
     geom_vline(data=filter(split_obs_dates, !obs_date), aes(xintercept=date, color=obs_date)) +
@@ -585,95 +587,124 @@ plot_pgdl_split_days(splits, tidied)
 #' Inputs data for testing y_test: Observations for testing m_test: Observation
 #' mask for testing depth_areas: cross-sectional area of each depth
 #'
-#' @param splits an R list of data
-#' @param batch_size the maximum number of dates in the supervised data per
-#'   batch (bigger batches will be used for the unsupervised data so that the
-#'   number of batches can be equal)
+#' @param splits an R list of data split into unsup, train, test, etc.
+#' @param tidied an R list of tidied data
 #' @param sequence_length the number of dates per timeseries sequence passed in
 #'   as a training example
 #' @param sequence_offset the number of dates by which each subsequent sequence
 #'   lags behind the previous sequence (per date)
-reshape_data_for_pgdl <- function(splits, tidied, batch_size=1000, sequence_length, sequence_offset=sequence_length/2) {
+reshape_data_to_sequences <- function(splits, depths, sequence_length, sequence_offset=sequence_length/2) {
 
-  depths <- tidied$geometry$Depth
-  n_depths <- length(depths)
+  # create matrices for everything except for unsup and predict
+  lapply(setNames(nm=names(splits)), function(phase_name) {
 
-  lapply(splits[c('pretrain','test','tune','train')], function(one_split) {
-    # compute the number of batches relative to the number of dates in the
-    # supervised feature data
-    n_batches <- length(unique(one_split$features$date)) / batch_size
-    stopifnot(n_batches %% 1 == 0) # n_batches should be an integer
-    lapply(
-      c(one_split, list(unsup_features = splits$unsup$features, unsup_physics = splits$unsup$physics)),
-      function(split_element) {
-        # split the split_element into multiple batches. the number of
-        # observations in each batch (1) depends on the number of depths and (2)
-        # will differ for the unsup_ data compared to the supervised versions.
-        # so compute batch_n_row based on n_batches here.
-        element_batch_n_row <- n_depths * length(unique(split_element$date)) / n_batches
-        element_batches <- lapply(seq_len(n_batches), function(batch_i) {
-          element_batch_rows <- (batch_i-1)*element_batch_n_row + c(
-            # start the batch a little early to overlap with preceding batches
-            # so that the number of sequences covering each data row will be
-            # equal, even when the data row is near the break between two
-            # batches
-            start = if(batch_i == 1) 1 else 1 - n_depths * (sequence_length - sequence_offset),
-            end = element_batch_n_row)
-          split_element[element_batch_rows[1]:element_batch_rows[2],]
+    message(phase_name)
+    one_phase <- splits[[phase_name]]
+
+    phase_seqs <- lapply(setNames(nm=names(one_phase)), function(element_name) {
+      message("  ", element_name)
+      phase_element <- one_phase[[element_name]]
+
+      # create a list with a separate data_frame for each shoulder (or just one
+      # element if the dates are contiguous) to avoid creating sequences that
+      # span a date gap
+      phase_element_shoulders <- phase_element %>%
+        mutate(
+          shoulder = {
+            shoulder_end <- date[which(as.numeric(diff(date), units='days') > 1)]
+            if(length(shoulder_end) > 1) stop('found more than 1 shoulder break, not ready for that')
+            if(length(shoulder_end) == 1) {
+              ifelse(date <= shoulder_end, 'left', 'right')
+            } else 'all'
+          }) %>%
+        group_by(shoulder) %>%
+        arrange(date, depth) %>%
+        tidyr::nest() %>%
+        pull(data)
+
+      # create a complete list of arrays, one per sequence
+      seq_arrs <- lapply(phase_element_shoulders, function(shoulder) {
+        n_sequences <- 1 + (length(unique(shoulder$date)) - sequence_length) / sequence_offset
+        stopifnot(n_sequences %% 1 == 0) # n_batches should be an integer
+
+        # split into sequences and pack into 3D or 4D matrix
+        pb <- progress::progress_bar$new(total = n_sequences, format = "[:bar] :current/:total (:percent)")
+        seqs <- lapply(seq_len(n_sequences), function(seq_i) {
+          pb$tick() # increment the progress bar
+
+          sequence <- shoulder[n_depths*sequence_offset*(seq_i-1)+(1:(n_depths*sequence_length)),]
+          seq_arr <- reshape_sequence_to_array(sequence, depths)
         })
-        # now take each batch for this element of the split, and reformat into
-        # an array
-        lapply(element_batches, reshape_batch_for_pgdl, depths, n_depths, sequence_length, sequence_offset)
-      })
-  })
+      }) %>%
+        unlist(recursive=FALSE) %>% # simplify to a list of seq_arrs
+        {setNames(., sprintf('%d', seq_along(.) - 1)) }
 
+      return(seq_arrs)
+    })
+
+    return(phase_seqs)
+  })
 }
 
-depths <- tidied$geometry$Depth
-n_depths <- length(depths)
-dat <- splits$train$features
-sequence_length <- 200
-sequence_offset <- 100
-reshape_batch_for_pgdl <- function(dat, depths, n_depths, sequence_length, sequence_offset) {
+reshape_sequence_to_array <- function(sequence, depths) {
 
-  three_dimensional <- 'ShortWave' %in% names(dat)
-  dates <- unique(dat$date)
-  num_sequences <- 1 + (length(dates) - sequence_length)/sequence_offset
-  stopifnot(num_sequences %% 1 == 0) # must be an integer
+  vars <- setdiff(names(sequence), c('date', 'depth'))
+  three_dimensional <- length(vars) > 1 # true for features, false for labels and mask
+  seq_df <- sequence %>%
+    mutate(date = format(date, '%Y-%m-%d'))
+  seq_dates <- unique(seq_df$date)
 
-  seq_arrs <- lapply(seq_len(num_sequences), function(seq_i) {
-    seq_dates <- dates[(seq_i-1)*sequence_offset + 1:sequence_length]
-    seq_df <- dat %>%
-      filter(dplyr::between(date, head(seq_dates, 1), tail(seq_dates, 1)))
+  if(three_dimensional) {
+    seq_arr <- array(
+      data = NA,
+      dim = c(depth=length(depths), date=length(seq_dates), feature=length(vars)),
+      dimnames = list(depth=depths, date=seq_dates, feature=vars))
+  } else {
+    seq_arr <- array(
+      data = NA,
+      dim = c(depth=length(depths), date=length(seq_dates)),
+      dimnames = list(depth=depths, date=seq_dates))
+  }
+  for(var_j in vars) {
+    seq_layer <- seq_df %>%
+      {.[,c('date','depth',var_j)]} %>% # faster than select(date, depth, !!var_j)
+      spread(date, !!var_j) %>%
+      as.matrix() %>%
+      {.[,2:ncol(.)]} # faster than select(-depth) 2 lines above
     if(three_dimensional) {
-      seq_arr <- array(
-        data = NA,
-        dim = c(depth=n_depths, date=sequence_length, feature=length(dim3_vars)),
-        dimnames = list(depths, format(seq_dates, '%Y-%m-%d'), dim3_vars))
+      seq_arr[,,var_j] <- seq_layer
     } else {
-      seq_arr <- array(
-        data = NA,
-        dim = c(depth=n_depths, date=sequence_length),
-        dimnames = list(depths, format(seq_dates, '%Y-%m-%d')))
+      seq_arr[,] <- seq_layer
     }
-    dim3_vars <- names(select(seq_df, -date, -Depth))
-    for(var_j in dim3_vars) {
-      seq_layer <- seq_df %>%
-        arrange(date, Depth) %>%
-        mutate(date = format(date, '%Y-%m-%d')) %>%
-        select(date, Depth, !!var_j) %>%
-        spread(date, !!var_j) %>%
-        select(-Depth) %>%
-        as.matrix()
-      dimnames(seq_layer)[[1]] <- paste(seq_i, depths, sep='_')
-      if(three_dimensional) {
-        seq_arr[,,var_j] <- seq_layer
-      } else {
-        seq_arr[,] <- seq_layer
-      }
-    }
-    return(seq_arr)
-  })
-  all_seq_arr <- do.call(abind, c(seq_arrs[1], list(along=1)))
-  attr(all_seq_arr, 'dim') <- setNames(attr(all_seq_arr, 'dim'), names(attr(seq_arrs[[1]], 'dim')))
+  }
+
+  return(seq_arr)
 }
+
+system.time({
+  sequences <- reshape_data_to_sequences(splits, tidied$geometry$Depth, sequence_length, sequence_offset)
+})
+
+
+save_data_to_np <- function(sequences, geometry, data_file) {
+
+  # flatten each list of arrays into a big array with dim+1, and flatten the
+  # nested phase-element lists into one list. result is a list of
+  # multi-dimensional arrays where the final dimension of each array is the
+  # sequence ID, and the list element names are things like unsup.physics and
+  # train.features
+  flat_seq_list <- lapply(unlist(sequences, recursive=FALSE), function(phase_element_seqs) {
+    new_dim <- 1+length(dim(phase_element_seqs[[1]]))
+    do.call(abind::abind, c(phase_element_seqs, list(along=new_dim)))
+  })
+
+  # add the lake geometry matrix to the list
+  data_list <- c(
+    flat_seq_list,
+    list(geometry = as.matrix(geometry)))
+
+  # save the whole list as a big .npz file (one numpy "file" per element in
+  # data_list)
+  do.call(np$savez_compressed, c(list(file = data_file), data_list)) # compression saves about 96% of the space
+}
+save_data_to_np(sequences, geometry)
