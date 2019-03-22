@@ -109,9 +109,10 @@ create_format_task_makefile <- function(makefile, task_plan) {
       "tidyr",
       "yaml"),
     sources = c(
-      "1_format/src/prepare_pgdl_data.R"),
+      "1_format/src/prepare_pgdl_data.R",
+      "1_format/src/combiners.R"),
     include = "1_format.yml",
-    final_targets = "1_format/log/input_files.ind",
-    finalize_funs = "upload_yeti_data")
+    final_targets = "1_format/log/pgdl_inputs.ind",
+    finalize_funs = "upload_pgdl_inputs")
 }
 

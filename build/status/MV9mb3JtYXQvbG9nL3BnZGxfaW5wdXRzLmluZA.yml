@@ -1,0 +1,11 @@
+version: 0.3.0
+name: 1_format/log/pgdl_inputs.ind
+type: file
+hash: cb94dea983b7b3099e8f7a0608160322
+time: 2019-03-22 20:40:59 UTC
+depends:
+  1_format_tasks.yml: ad81c46714967fc0e4013464af99938a
+fixed: 09a2ddd0f2c245e598569f816ce35d42
+code:
+  functions: {}
+

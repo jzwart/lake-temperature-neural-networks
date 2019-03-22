@@ -14,18 +14,28 @@ retrieve_lake_data <- function(out_ind, priority_lakes, file_column, yeti_path) 
 }
 
 
-get_yeti_uploader <- function(src_dir, yeti_path) {
-  upload_yeti_data <- function(ind_file, ...) {
-    files_full <- c(...)
-    src_dir <- unique(dirname(files_full))
-    stopifnot(length(src_dir) == 1)
+#' Uploads nearly model-read files (data split into phases and formatted as
+#' sequences) to Yeti for modeling
+#'
+#' Because this function is to be used as a task makefile combiner, we're not
+#' allowed any arguments other than ind_file and ...=list_of_files. But we need
+#' configuration information, so we'll scmake('pgdl_inputs_yeti_path') to get
+#' `yeti_path`.
+#'
+#' @param ind_file the indicator file to write
+#' @param ... the file paths to upload
+upload_pgdl_inputs <- function(ind_file, ...) {
+  # get data from the parent remake file
+  yeti_path <- scmake('pgdl_inputs_yeti_path', force=TRUE)
 
-    yeti_put(
-      src_dir = src_dir,
-      dest_dir = yeti_path,
-      files = basename(files_full))
+  files_full <- c(...)
+  src_dir <- unique(dirname(files_full))
+  stopifnot(length(src_dir) == 1)
 
-    sc_indicate(ind_file = ind_file, data_file = files_full)
-  }
-  return(upload_pgdl_data)
+  yeti_put(
+    src_dir = src_dir,
+    dest_dir = yeti_path,
+    files = basename(files_full))
+
+  sc_indicate(ind_file = ind_file, data_file = files_full)
 }

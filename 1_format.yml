@@ -147,18 +147,13 @@ targets:
       glm_preds_tmpind = '1_format/tmp/glm_preds.tmpind',
       drivers_tmpind = '1_format/tmp/drivers.tmpind')
 
-  upload_yeti_data:
-    command: get_yeti_uploader(
-      src_dir = I('1_format/tmp/pgdl_inputs'),
-      yeti_path = pgdl_inputs_yeti_path)
-
   1_format_tasks.yml:
     command: create_format_task_makefile(
       makefile = target_name,
       task_plan = format_data_task_plan)
 
-  1_format/log/input_files.ind:
-    command: scmake(I('input_files.ind_promise'), remake_file='1_format_tasks.yml', force=TRUE)
+  1_format/log/pgdl_inputs.ind:
+    command: scmake(I('pgdl_inputs.ind_promise'), remake_file='1_format_tasks.yml', force=TRUE)
 
   #1_format/out/pgdl_inputs.ind:
   #  command: retrieve_lake_data(
