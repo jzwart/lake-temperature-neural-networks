@@ -64,6 +64,6 @@ yeti_put <- function(src_dir, dest_dir, files) {
   # rsync() that would help. Error: rsync: failed to open
   # "/cxfs/projects/usgs/water/iidd/data-sci/lake-temp/pgdl-inputs/nhd_1099476.npz",
   # continuing: Permission denied (13)
-  syncr::rsync(src=src_dir, dest=dest_path, files_from=tmpfile)
+  syncr::rsync(src=src_dir, dest=dest_path, files_from=tmpfile, chmod='ugo+rw')
   return(file.path(dest_dir, files))
 }
