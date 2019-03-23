@@ -29,20 +29,23 @@ for filename in os.listdir(directory):
         #for each unique lake
         lnames.add(name)
         n_lakes += 1
-        
+
+
+        data_path = '1_format/in/tmp/'
+        name = 'nhd_1099476'
 
         ############################################
         #read/format meteorological data for numpy
         #############################################
-        meteo_dates = np.loadtxt('../../data/raw/figure3/nhd_'+name+'_meteo.csv', delimiter=',', dtype=np.string_ , usecols=0)
+        meteo_dates = np.loadtxt(data_path+name+'_meteo.csv', delimiter=',', dtype=np.string_ , usecols=0)
 
 
         #lower/uppur cutoff indices (to match observations)
-        obs = pd.read_feather('../../data/raw/figure3/nhd_'+name+'_test_train.feather')
+        obs = pd.read_feather(data_path+name+'_test_train.feather')
         start_date = "{:%Y-%m-%d}".format(obs.values[0,1]).encode()
         end_date = "{:%Y-%m-%d}".format(obs.values[-1,1]).encode()
         lower_cutoff = np.where(meteo_dates == start_date)[0][0] #457
-        if len(np.where(meteo_dates == end_date)[0]) < 1: 
+        if len(np.where(meteo_dates == end_date)[0]) < 1:
             print("observation beyond meteorological data! data will only be used up to the end of meteorological data")
             upper_cutoff = meteo_dates.shape[0]
         else:
@@ -79,7 +82,7 @@ for filename in os.listdir(directory):
         depths_normalized = np.divide(depths - depths.mean(), depths.std())
 
         #format date to string to match
-        glm_temps[:,0] = np.array([glm_temps[a,0].strftime('%Y-%m-%d') for a in range(n_total_dates)]) 
+        glm_temps[:,0] = np.array([glm_temps[a,0].strftime('%Y-%m-%d') for a in range(n_total_dates)])
 
         if len(np.where(glm_temps[:,0] == start_date.decode())[0]) < 1:
             print("observations begin at " + start_date.decode() + "which is before GLM data which begins at " + glm_temps[0,0])
@@ -89,9 +92,9 @@ for filename in os.listdir(directory):
             meteo_norm = meteo_norm[new_meteo_lower_cutoff:,:]
             meteo_dates = meteo_dates[new_meteo_lower_cutoff:]
         else:
-            lower_cutoff = np.where(glm_temps[:,0] == start_date.decode())[0][0] 
+            lower_cutoff = np.where(glm_temps[:,0] == start_date.decode())[0][0]
 
-        if len(np.where(glm_temps[:,0] == end_date.decode())[0]) < 1: 
+        if len(np.where(glm_temps[:,0] == end_date.decode())[0]) < 1:
             print("observations extend to " + end_date.decode() + "which is beyond GLM data which extends to " + glm_temps[-1,0])
             upper_cutoff = glm_temps[:,0].shape[0]
             new_meteo_upper_cutoff = np.where(meteo_dates == glm_temps[-1,0].encode())[0][0]
@@ -101,7 +104,7 @@ for filename in os.listdir(directory):
 
 
         else:
-            upper_cutoff = np.where(glm_temps[:,0] == end_date.decode())[0][0] 
+            upper_cutoff = np.where(glm_temps[:,0] == end_date.decode())[0][0]
         # upper_cutoff = np.where(glm_temps[:,0] == end_date.decode())[0][0]
 
         glm_temps = glm_temps[lower_cutoff:upper_cutoff+1,:]
@@ -114,14 +117,14 @@ for filename in os.listdir(directory):
         assert n_dates == glm_temps.shape[0]
         #assert dates line up
         assert(glm_temps[0,0] == meteo_dates[0].decode())
-        
+
         if glm_temps[-1,0] != meteo_dates[-1].decode():
             print(glm_temps[-1,0])
             print(meteo_dates[-1].decode())
-        
+
         assert(glm_temps[-1,0] == meteo_dates[-1].decode())
 
-        ice_flag = glm_temps[:,-1] 
+        ice_flag = glm_temps[:,-1]
         glm_temps = glm_temps[:,1:-1]
         obs = obs.values[:,1:] #remove needless nhd column
         n_obs = obs.shape[0]
@@ -155,7 +158,7 @@ for filename in os.listdir(directory):
             sys.exit()
         if np.isnan(np.sum(feat_norm_mat)):
             print("ERROR: Preprocessing failed, there is missing data feat norm")
-            sys.exit() 
+            sys.exit()
         if np.isnan(np.sum(glm_mat)):
             # print("Warning: there is missing data in glm output")
             for i in range(n_depths):
@@ -175,7 +178,7 @@ for filename in os.listdir(directory):
         obs_g = 0
         obs_d = 0
         for o in range(n_obs):
-            
+
             if obs[o,1] > depths[-1]:
                 obs_g += 1
                 # print("observation depth " + str(obs[o,1]) + " is greater than the max depth of " + str(max_depth))
@@ -201,7 +204,7 @@ for filename in os.listdir(directory):
         print("lake " + str(n_lakes) + ",  id: " + name + ": " + str(obs_g) + "/" + str(n_obs) + " observations greater than max depth " + str(max_depth) + d_str)
         #write features and labels to processed data
 
-        if first_time:        
+        if first_time:
             os.mkdir("../../data/processed/WRR_69Lake/"+name)
             os.mkdir("../../models/WRR_69Lake/"+name)
         feat_path = "../../data/processed/WRR_69Lake/"+name+"/features"
