@@ -26,7 +26,7 @@ retrieve_lake_data <- function(out_ind, priority_lakes, file_column, yeti_path) 
 #' @param ... the file paths to upload
 upload_pgdl_inputs <- function(ind_file, ...) {
   # get data from the parent remake file
-  yeti_path <- scmake('pgdl_inputs_yeti_path', force=TRUE)
+  yeti_path <- scmake('pgdl_inputs_yeti_path')
 
   files_full <- c(...)
   src_dir <- unique(dirname(files_full))
