@@ -94,7 +94,8 @@ targets:
       geometry_pattern = I('1_format/tmp/geometry/%s_geometry.csv'),
       glm_preds_pattern = I('1_format/tmp/glm_preds/%s_temperatures.feather'),
       drivers_pattern = I('1_format/tmp/drivers/NLDAS_time[%s]_x[%s]_y[%s].csv'),
-      drivers_time = drivers_time)
+      drivers_time = drivers_time,
+      pgdl_inputs_pattern = I('1_format/tmp/pgdl_inputs/%s.npz'))
 
   #### Retrieve/create data files for priority lakes ####
 
@@ -154,10 +155,3 @@ targets:
 
   1_format/log/pgdl_inputs.ind:
     command: scmake(I('pgdl_inputs.ind_promise'), remake_file='1_format_tasks.yml', force=TRUE)
-
-  #1_format/out/pgdl_inputs.ind:
-  #  command: retrieve_lake_data(
-  #    out_ind = target_name,
-  #    priority_lakes = priority_lakes,
-  #    file_column = I('glm_preds_file'),
-  #    yeti_path = glm_preds_yeti_path)

@@ -68,7 +68,9 @@ create_format_task_plan <- function(
     create_task_step(
       step_name = "py_data",
       target_name = function(task_name, ...) {
-        sprintf("1_format/tmp/pgdl_inputs/%s.npz", task_name)
+        file_hashes %>%
+          filter(site_id == task_name) %>%
+          pull(pgdl_inputs_file)
       },
       command = function(task_name, ...) {
         psprintf(

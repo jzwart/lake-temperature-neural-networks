@@ -117,12 +117,13 @@ add_lake_metadata <- function(lake_selection, nldas_crosswalk_ind) {
 #'   for the time range, cell x, and cell y
 #' @param drivers_time a string to be used as the time range in the
 #'   drivers_pattern
-assign_lake_files <- function(lakes_df, obs_pattern, geometry_pattern, glm_preds_pattern, drivers_pattern, drivers_time) {
+assign_lake_files <- function(lakes_df, obs_pattern, geometry_pattern, glm_preds_pattern, drivers_pattern, drivers_time, pgdl_inputs_pattern) {
   lakes_df %>%
     mutate(
       obs_file = sprintf(obs_pattern, site_id),
       geometry_file = sprintf(geometry_pattern, site_id),
       glm_preds_file = sprintf(glm_preds_pattern, site_id),
-      drivers_file = sprintf(drivers_pattern, drivers_time, nldas_coord_x, nldas_coord_y)) %>%
+      drivers_file = sprintf(drivers_pattern, drivers_time, nldas_coord_x, nldas_coord_y),
+      pgdl_inputs_file = sprintf(pgdl_inputs_pattern, site_id)) %>%
     select(-nldas_coord_x, -nldas_coord_y)
 }
