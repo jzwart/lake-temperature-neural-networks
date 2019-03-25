@@ -8,59 +8,62 @@ Created on Fri Dec  7 18:05:09 2018
 import tensorflow as tf
 import physics as phy
 
-def build_tf_graph(n_steps, input_size, state_size, phy_size, depth_areas, ec_threshold, plam, elam, N_sec, learning_rate):
+def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, depth_areas, ec_threshold, plam, elam, seq_per_batch, learning_rate):
     """Builds a tensorflow graph for the PRGNN model
-    
+
     Args:
         n_steps: Number of timesteps in the time window represented by the LSTM (shorter than total number of timesteps in the dataset or even the batch)
         input_size: Number of features in the input data (drivers) used for supervised learning
         state_size: Number of units in each LSTM cell's hidden state
         phy_size: Number of features in the input data (drivers) used for UNsupervised learning. These data should be unnormalized.
+        colnames_physics: Numpy array of the column names for the feature dimension of the physics array
         ec_threshold: Tolerance for energy imbalance before any penalization occurs
         plam: Physics constraint lambda, a hyperparameter that needs manual tuning. PRESENTLY IGNORED (no physics constraint)
         elam: Energy constraint lambda, another hyperparameter that needs manual tuning. Could set elam=0 if we wanted RNN only, no EC component
-        N_sec: Number of sections to arrange vertically within the input for a batch (after splitting into windows of width n_steps)
+        seq_per_batch: Number of sections to arrange vertically within the input for a batch (after splitting into windows of width n_steps)
         learning_rate: Learning rate
     """
-    
+
     # Clear the slate
     tf.reset_default_graph()
 
-    # Graph input/output. n timesteps is less than the total number of timesteps at the lake; it's just hte window width
-    x = tf.placeholder("float", [None, n_steps, input_size]) #[n depths, n_timesteps, n drivers]
-    y = tf.placeholder("float", [None, n_steps]) # [n depths, n timesteps]
+    # Graph input/output. n timesteps is less than the total number of timesteps at the lake; it's just the number of dates in one sequence
+    x = tf.placeholder("float", [None, n_steps, input_size])
+    y = tf.placeholder("float", [None, n_steps])
     m = tf.placeholder("float", [None, n_steps])
-    
+
     # Define LSTM cells
-    lstm_cell = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias=1.0) # define a single LSTM cell
+    #lstm_cell = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias=1.0) # define a single LSTM cell
+    lstm_cell = tf.nn.rnn_cell.LSTMCell(state_size, forget_bias=1.0, name='basic_lstm_cell') # define a single LSTM cell
     # dynamic_rnn is faster for long timeseries, compared to tf.nn.static_rnn. the default namespace for tf.nn.dynamic_rnn in "rnn"; this becomes importatin in line 367
     state_series_x, current_state_x = tf.nn.dynamic_rnn(lstm_cell, x, dtype=tf.float32) # add multiple LSTM cells to the network. uses the dimensions of x to choose the dimensions of the LSTM network
-    
+
     # Output layer
     n_classes = 1 # Number of output values (probably 1 for a single depth-specific, time-specific prediction)
     w_fin = tf.get_variable('w_fin',[state_size, n_classes], tf.float32,
                                      tf.random_normal_initializer(stddev=0.02))
     b_fin = tf.get_variable('b_fin',[n_classes],  tf.float32,
                                      initializer=tf.constant_initializer(0.0))
-    
+
     # Define how LSTM and final layers are connected to make predictions
     pred=[]
     for i in range(n_steps):
         tp1 = state_series_x[:,i,:] #state_series_x dimensions are [n depths, n timesteps, n hidden units]
         pt = tf.matmul(tp1,w_fin)+b_fin
-        pred.append(pt) # couldn't do pred[i] = pt because tensorflow wouldn't like it
-    
+        pred.append(pt) # can't do pred[i] = pt because tensorflow wouldn't like it
+
     pred = tf.stack(pred,axis=1) # converts the preds list to a tensorflow array. [n depths, n timesteps, 1] (the last dimension isn'd really needed; we'll remove it later)
     pred_s = tf.reshape(pred,[-1,1]) # collapse from 3D [depths, timesteps, 1] to 2D [depths * timesteps, 1]
     y_s = tf.reshape(y,[-1,1])
-    m_s = tf.reshape(m,[-1,1]) # this is the mask of 0s and 1s (1 means the observation exists)
-        
-    # Compute cost with masking (m_s)
-    r_cost = tf.sqrt(tf.reduce_sum(tf.square(tf.multiply((pred_s-y_s),m_s)))/tf.reduce_sum(m_s)) # note use of masks m_s
-    # the only other cost function we might reasonably consider, besides RMSE above, might be MAE...but they're quite similar
-    
+    m_s = tf.where(tf.is_nan(y_s), tf.zeros_like(y_s), y_s) # tf.reshape(m,[-1,1]) # this is the mask of 0s and 1s (1 means the observation exists)
+
+    # Compute cost as RMSE with masking (tf.where replaces pred_s-y_s with 0 when y_s is nan)
+    # so we're only looking at predictions with corresponding observations available
+    r_cost = tf.sqrt(tf.reduce_sum(tf.square((tf.where(tf.is_nan(y_s), tf.zeros_like(y_s), pred_s - y_s)))) / tf.reduce_sum(m_s))
+    # the only other cost function we might reasonably consider besides RMSE might be MAE...but they're quite similar
+
     ### EC penalization (using unsupervised learning, which allows us to use a larger dataset than the above supervised learning can
-    
+
     #unsup = unsupervised. this is a placeholder for all the drivers relevant to the EC computation
     # this is a second phase of training, called semi-supervised learning, where we only apply one part of the loss function (the EC part).
     # so we still learn something, if not as much as we learned from the days with observations
@@ -68,39 +71,39 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, depth_areas, ec_th
     # the variable_scope part needs to match the variable_scope we used before, rnn, so that tf.nn.dynamic_rnn(lstm_cell) uses and
     # trains the same lstm parameters as before
     with tf.variable_scope("rnn", reuse=True) as scope_sp:
-        state_series_xu, current_state_xu = tf.nn.dynamic_rnn(lstm_cell, unsup_inputs, dtype=tf.float32, scope=scope_sp) 
-    
+        state_series_xu, current_state_xu = tf.nn.dynamic_rnn(lstm_cell, unsup_inputs, dtype=tf.float32, scope=scope_sp)
+
     pred_u=[] # same as above for the supervised part
-    #pred_s = []
     for i in range(n_steps):
-        tp2 = state_series_xu[:,i,:] # state_series_xu is hte state series from teh unsupervised input
+        tp2 = state_series_xu[:,i,:] # state_series_xu is the state series from the unsupervised input
         pt2 = tf.matmul(tp2,w_fin)+b_fin
         pred_u.append(pt2)
-    
+
     pred_u = tf.stack(pred_u,axis=1)
     pred_u = tf.reshape(pred_u,[-1,n_steps])
-    
+
     # unsupervised physics data include the non-normalized versions of the drivers (for the LSTM we wanted the normalized, mean=0, sd=1 version)
     unsup_phys_data = tf.placeholder("float", [None, n_steps, phy_size]) #tf.float32
-    n_depths = depth_areas.size
+    n_depths = depth_areas.shape[0]
 
     unsup_loss,a,b,c = phy.calculate_ec_loss(
         unsup_inputs,
         pred_u,
-        unsup_phys_data,                                     
+        unsup_phys_data,
         depth_areas,
         n_depths,
         ec_threshold,
-        N_sec,
+        seq_per_batch,
+        colnames_physics,
         combine_days=1)
-    
+
     # Compute total costs
-    cost = r_cost + elam*unsup_loss#+plam*plos+plam*plos_u. 
-        
+    cost = r_cost + elam*unsup_loss#+plam*plos+plam*plos_u.
+
     # Define the gradients and optimizer
     tvars = tf.trainable_variables()
     grads = tf.gradients(cost, tvars)
     optimizer = tf.train.AdamOptimizer(learning_rate)
     train_op = optimizer.apply_gradients(zip(grads, tvars))
-    
+
     return(train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data)

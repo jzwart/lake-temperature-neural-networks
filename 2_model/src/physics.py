@@ -30,10 +30,10 @@ def transformTempToDensity(temp):
 #                ploss = ploss/n_steps/npic/50
 #                return ploss
 
-def calculate_ec_loss(inputs, outputs, phys, depth_areas, n_depths, ec_threshold, n_sets, combine_days=1):
+def calculate_ec_loss(inputs, outputs, phys, depth_areas, n_depths, ec_threshold, n_sets, colnames_physics, combine_days=1):
     #******************************************************
     #description: calculates energy conservation loss
-    #parameters: 
+    #parameters:
         #@inputs: features
         #@outputs: labels
         #@phys: features(not standardized) of sw_radiation, lw_radiation, etc
@@ -42,19 +42,20 @@ def calculate_ec_loss(inputs, outputs, phys, depth_areas, n_depths, ec_threshold
         #@n_depths: number of depths
         #@use_gpu: gpu flag
         #@n_sets: number of sets of depths in the batch
+        #@colnames_physics: numpy array of the column names for the feature dimension of the physics array
         #@combine_days: how many days to look back to see if energy is conserved
     #*********************************************************************************
-    
+
 #    diff_vec = torch.empty((inputs.size()[1]))
 #    n_dates = inputs.size()[1]
     # outputs = labels
-    
+
 #    outputs = outputs.view(outputs.size()[0], outputs.size()[1])
     # print("modeled temps: ", outputs)
     densities = transformTempToDensity(outputs)
     # print("modeled densities: ", densities)
 
-    diff_per_set = [] #torch.empty(n_sets) 
+    diff_per_set = [] #torch.empty(n_sets)
     for i in range(n_sets):
         #loop through sets of n_depths
         #indices
@@ -62,33 +63,32 @@ def calculate_ec_loss(inputs, outputs, phys, depth_areas, n_depths, ec_threshold
         end_index = (i+1)*n_depths
 
         #calculate lake energy for each timestep
-        lake_energies = calculate_lake_energy(outputs[start_index:end_index,:], densities[start_index:end_index,:], depth_areas)
+        lake_energies = calculate_lake_energy(outputs[start_index:end_index,:], densities[start_index:end_index,:], n_depths, depth_areas)
+
         #calculate energy change in each timestep
-        lake_energy_deltas = calculate_lake_energy_deltas(lake_energies, combine_days, depth_areas[0])
+        surface_area = depth_areas[0,1]
+        lake_energy_deltas = calculate_lake_energy_deltas(lake_energies, combine_days, surface_area)
         lake_energy_deltas = lake_energy_deltas[1:]
         #calculate sum of energy flux into or out of the lake at each timestep
         # print("dates ", dates[0,1:6])
-        lake_energy_fluxes = calculate_energy_fluxes(phys[start_index,:,:], outputs[start_index,:], combine_days)
+        lake_energy_fluxes = calculate_energy_fluxes(phys[start_index,:,:], outputs[start_index,:], combine_days, colnames_physics)
 #        ### can use this to plot energy delta and flux over time to see if they line up
 #        doy = np.array([datetime.datetime.combine(date.fromordinal(x), datetime.time.min).timetuple().tm_yday  for x in dates[start_index,:]])
 #        doy = doy[1:-1]
-        
+
 #        print(lake_energy_deltas)
         diff_vec = tf.abs(lake_energy_deltas - lake_energy_fluxes) #.abs_()
-        
+
         # mendota og ice guesstimate
         # diff_vec = diff_vec[np.where((doy[:] > 134) & (doy[:] < 342))[0]]
 
-        #actual ice
-#        print(diff_vec)
-#        print(phys)
-        tmp_mask = 1-phys[start_index+1,1:-1,9] #(phys[start_index+1,:,9] == 0) # don't apply EC to the ice-on period. the mask is a column in the phys matrix (it's a boolean)
-#        print(tmp_mask)
-#        print(diff_vec)
-#        print(tmp_mask)
+        # don't apply EC to the ice-on period. the mask is a column in the phys matrix
+        # (it's a boolean, i.e., 0 for ice, 1 for non-ice)
+        ice_col = phys_column_index('Ice', colnames_physics)
+        tmp_mask = 1-phys[start_index+1,1:-1,ice_col]
         tmp_loss = tf.reduce_mean(diff_vec*tf.cast(tmp_mask,tf.float32))
         diff_per_set.append(tmp_loss)
-        
+
 ##        print(phys)
 #        diff_vec = diff_vec[tf.where((phys[1:(n_depths-tf.shape(diff_vec)[0]-1),9] == 0))[0]]
 #        # #compute difference to be used as penalty
@@ -98,24 +98,20 @@ def calculate_ec_loss(inputs, outputs, phys, depth_areas, n_depths, ec_threshold
 #            diff_per_set.append(tf.reduce_mean(diff_vec)) #diff_per_set[i] = diff_vec.mean()
 
     diff_per_set_r = tf.stack(diff_per_set)
-    
+
     diff_per_set = tf.clip_by_value(diff_per_set_r - ec_threshold, clip_value_min=0,clip_value_max=999999)
 #    diff_per_set = torch.clamp(diff_per_set - ec_threshold, min=0)
     return tf.reduce_mean(diff_per_set),diff_vec,diff_per_set_r,diff_per_set #, lake_energy_deltas, lake_energy_fluxes#.mean()
 
-def calculate_lake_energy(temps, densities, depth_areas):
+def calculate_lake_energy(temps, densities, n_depths, depth_areas):
     #calculate the total energy of the lake for every timestep
     #sum over all layers the (depth cross-sectional area)*temp*density*layer_height)
-    #then multiply by the specific heat of water 
+    #then multiply by the specific heat of water
     dz = 0.5 #thickness for each layer, hardcoded for now
     cw = 4186 #specific heat of water
-#    energy = torch.empty_like(temps[0,:])
-    n_depths = 24
-#    depth_areas = depth_areas.view(n_depths,1).expand(n_depths, temps.size()[1])
 
-#    print(depth_areas)
-    depth_areas = tf.reshape(depth_areas,[n_depths,1])
-    energy = tf.reduce_sum(tf.multiply(tf.cast(depth_areas,tf.float32),temps)*densities*dz*cw,0)
+    areas = tf.reshape(depth_areas[:,1],[n_depths,1])
+    energy = tf.reduce_sum(tf.multiply(tf.cast(areas,tf.float32),temps)*densities*dz*cw,0)
     return energy
 
 
@@ -154,11 +150,11 @@ def calculate_air_density(air_temp, rh):
     # print(1.0/c_gas * (1 + r)/(1 + r/mwrw2a) * p/(air_temp + 273.15))
     # sys.exit()
     # return 0.348*(1+r)/(1+1.61*r)*(p/(air_temp+273.15))
-    return (1.0/c_gas * (1 + r)/(1 + r/mwrw2a) * p/(air_temp + 273.15))*100# 
+    return (1.0/c_gas * (1 + r)/(1 + r/mwrw2a) * p/(air_temp + 273.15))*100#
 def calculate_heat_flux_sensible(surf_temp, air_temp, rel_hum, wind_speed):
     #equation 22 in GLM/GLEON paper(et al Hipsey)
     #GLM code ->  Q_sensibleheat = -CH * (rho_air * 1005.) * WindSp * (Lake[surfLayer].Temp - MetData.AirTemp);
-    #calculate air density 
+    #calculate air density
     rho_a = calculate_air_density(air_temp, rel_hum)
 
     #specific heat capacity of air in J/(kg*C)
@@ -172,7 +168,7 @@ def calculate_heat_flux_sensible(surf_temp, air_temp, rel_hum, wind_speed):
     U_10 = calculate_wind_speed_10m(wind_speed)
     # U_10 = wind_speed
     return -rho_a*c_a*c_H*U_10*(surf_temp - air_temp)
- 
+
 def calculate_heat_flux_latent(surf_temp, air_temp, rel_hum, wind_speed):
     #equation 23 in GLM/GLEON paper(et al Hipsey)
     #GLM code-> Q_latentheat = -CE * rho_air * Latent_Heat_Evap * (0.622/p_atm) * WindSp * (SatVap_surface - MetData.SatVapDef)
@@ -190,7 +186,7 @@ def calculate_heat_flux_latent(surf_temp, air_temp, rel_hum, wind_speed):
     #wind speed at 10m height
     # U_10 = wind_speed
     U_10 = calculate_wind_speed_10m(wind_speed)
-# 
+#
     #ratio of molecular weight of water to that of dry air
     omega = 0.622
 
@@ -220,44 +216,47 @@ def calculate_wind_speed_10m(ws, ref_height=2.):
     return ws*(tf.log(10.0/c_z0)/tf.log(ref_height/c_z0))
 
 
-def calculate_energy_fluxes(phys, surf_temps, combine_days):
-    # print("surface_depth = ", phys[0:5,1])
-#    fluxes = torch.empty_like(phys[:-combine_days-1,0])
+def calculate_energy_fluxes(phys, surf_temps, combine_days, colnames_physics):
 
-    # E = phys_operations.calculate_heat_flux_latent(t_s, air_temp, rel_hum, ws)
-    # H = phys_operations.calculate_heat_flux_sensible(t_s, air_temp, rel_hum, ws)
-#    time = 86400 #seconds per day
-#    surface_area = 39865825 
+    short_wave_col = phys_column_index('ShortWave', colnames_physics)
+    R_sw_arr = phys[:-1,short_wave_col] + (phys[1:,short_wave_col]-phys[:-1,short_wave_col])/2
+
+    long_wave_col = phys_column_index('LongWave', colnames_physics)
+    R_lw_arr = phys[:-1,long_wave_col] + (phys[1:,long_wave_col]-phys[:-1,long_wave_col])/2
+
     e_s = 0.985 #emissivity of water, given by Jordan
-    alpha_sw = 0.07 #shortwave albedo, given by Jordan Read
-    alpha_lw = 0.03 #longwave, albeda, given by Jordan Read
-    sigma = 5.67e-8 #Stefan-Baltzmann constant
-    R_sw_arr = phys[:-1,2] + (phys[1:,2]-phys[:-1,2])/2
-    R_lw_arr = phys[:-1,3] + (phys[1:,3]-phys[:-1,3])/2
+    sigma = 5.67e-8 #Stefan-Boltzmann constant
     R_lw_out_arr = e_s*sigma*(tf.pow(surf_temps[:]+273.15, 4))
     R_lw_out_arr = R_lw_out_arr[:-1] + (R_lw_out_arr[1:]-R_lw_out_arr[:-1])/2
 
-    air_temp = phys[:-1,4] 
-    air_temp2 = phys[1:,4]
-    rel_hum = phys[:-1,5]
-    rel_hum2 = phys[1:,5]
-    ws = phys[:-1, 6]
-    ws2 = phys[1:,6]
     t_s = surf_temps[:-1]
     t_s2 = surf_temps[1:]
-    E = calculate_heat_flux_latent(t_s, air_temp, rel_hum, ws)
-    H = calculate_heat_flux_sensible(t_s, air_temp, rel_hum, ws)
-    E2 = calculate_heat_flux_latent(t_s2, air_temp2, rel_hum2, ws2)
-    H2 = calculate_heat_flux_sensible(t_s2, air_temp2, rel_hum2, ws2)
-    E = (E + E2)/2
-    H = (H + H2)/2
 
-#    #test
-#    print(R_sw_arr)
-#    print(R_lw_arr)
-#    print(R_lw_out_arr)
-#    print(E)
-#    print(H)
-#    fluxes = R_sw_arr[:-1]*(1-alpha_sw) + R_lw_arr[:-1]*(1-alpha_lw) - R_lw_out_arr[:-1] + E[:-1]
+    air_temp_col = phys_column_index('AirTemp', colnames_physics)
+    air_temp = phys[:-1,air_temp_col]
+    air_temp2 = phys[1:,air_temp_col]
+
+    rel_hum_col = phys_column_index('RelHum', colnames_physics)
+    rel_hum = phys[:-1,rel_hum_col]
+    rel_hum2 = phys[1:,rel_hum_col]
+
+    wind_speed_col = phys_column_index('WindSpeed', colnames_physics)
+    ws = phys[:-1, wind_speed_col]
+    ws2 = phys[1:,wind_speed_col]
+
+    E1 = calculate_heat_flux_latent(t_s, air_temp, rel_hum, ws)
+    E2 = calculate_heat_flux_latent(t_s2, air_temp2, rel_hum2, ws2)
+    H1 = calculate_heat_flux_sensible(t_s, air_temp, rel_hum, ws)
+    H2 = calculate_heat_flux_sensible(t_s2, air_temp2, rel_hum2, ws2)
+    E = (E1 + E2)/2
+    H = (H1 + H2)/2
+
+    # Combine into net flux
+    alpha_sw = 0.07 #shortwave albedo, given by Jordan Read
+    alpha_lw = 0.03 #longwave, albedo, given by Jordan Read
     fluxes = (R_sw_arr[:-1]*(1-alpha_sw) + R_lw_arr[:-1]*(1-alpha_lw) - R_lw_out_arr[:-1] + E[:-1] + H[:-1])
+
     return fluxes
+
+def phys_column_index(colname, colnames_physics):
+    return [i for i, v in enumerate(colnames_physics) if colname in v][0]

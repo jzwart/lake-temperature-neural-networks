@@ -10,7 +10,7 @@
 #SBATCH --export=ALL
 #SBATCH --array=0-2            # process IDs corresponding to list order (0-indexed) of model_params.npy
 
-cd /cxfs/projects/usgs/water/iidd/data-sci/lake-temp/nn-test
+cd /cxfs/projects/usgs/water/iidd/data-sci/lake-temp/lake-temperature-neural-networks-apa
 module load python/anaconda3 cuda/9.0.176
 source activate tensorflow
 python run_job.py ${SLURM_ARRAY_TASK_ID}
