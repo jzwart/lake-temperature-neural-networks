@@ -736,9 +736,17 @@ save_data_to_np <- function(r_data, data_file) {
     do.call(abind::abind, c(phase_element_seqs, list(along=new_dim)))
   })
 
-  # add the lake geometry matrix to the list
+  # add the sequence feature names to the list, extracting those feature names
+  # from a single example of each sequence type
   data_list <- c(
     flat_seq_list,
+    list(
+      colnames.features = dimnames(sequences$train$features[[1]])$feature,
+      colnames.physics = dimnames(sequences$unsup$physics[[1]])$feature))
+
+  # add the lake geometry matrix to the list
+  data_list <- c(
+    data_list,
     list(geometry = as.matrix(geometry)))
 
   # save the whole list as a big .npz file (one numpy "file" per element in
