@@ -20,15 +20,20 @@ targets:
     depends:
       - 2_model/log/2_model_tasks.ind
 
-  # read and subset the NN settings
-  model_cfg:
-    command: settings[[I('model_functions')]]
+  # get status of pgdl_input files
+  1_format/log/pgdl_inputs.ind:
+    command: retrieve_lake_data(
+      out_ind = target_name,
+      priority_lakes = priority_lakes,
+      file_column = I('drivers_file'),
+      yeti_path = drivers_yeti_path)
 
   #site_ids:
  #   command: get_site_ids(file = 'lib/crosswalks/pipeline_3_lakes.csv')
 
-  fetch_formatted_data_task_plan:
-    command: create_fetch_formatted_data_task_plan(priority_lakes, ind_dir = I("2_model"))
+  training_task_plan:
+    command: create_training_task_plan(
+      priority_lakes, ind_dir = I("2_model"))
 
   2_fetch_formatted_data_tasks.yml:
     command: create_task_makefile(makefile=target_name, task_plan = fetch_formatted_data_task_plan, include = I("2_model.yml"))
