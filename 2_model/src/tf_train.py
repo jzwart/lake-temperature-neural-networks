@@ -5,12 +5,13 @@ Created on Wed Dec 12 12:16:35 2018
 @author: aappling
 """
 
+import os
 import numpy as np
 import tensorflow as tf
 
 def train_tf_graph(
         train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data,
-        x_train, y_train, m_train, x_unsup, p_unsup, x_test, y_test, m_test,
+        x_train, y_train, m_train, x_unsup, p_unsup, x_test, y_test, m_test, x_pred,
         seq_per_batch, n_epochs=300, min_epochs_test=0, min_epochs_save=250,
         restore_path='', save_path='./out/EC_mille/pretrain', max_to_keep=3, save_preds=True):
     """Trains a tensorflow graph for the PRGNN model
@@ -22,9 +23,10 @@ def train_tf_graph(
         m_train: Observation mask for supervised learning
         x_unsup: Input data for unsupervised learning
         p_unsup: Observations for unsupervised learning (p = physics)
-        x_test: Inputs data for testing
+        x_test: Input data for testing
         y_test: Observations for testing
         m_test: Observation mask for testing
+        x_pred: Input data for final prediction
         seq_per_batch: Number of sequences to include per batch
         n_epochs: Total number of epochs to run during training. Needs to be larger than the n epochs needed for the model to converge
         min_epochs_test: Minimum number of epochs to run through before computing test losses
@@ -34,6 +36,9 @@ def train_tf_graph(
         max_to_keep: Max number of checkpoints to keep in the save_path
         save_preds: Logical - should test predictions be saved (and ovewritten) each time we save a checkpoint?
     """
+
+    # Make sure the save path exists
+    os.makedirs(save_path, exist_ok=True)
 
     # Compute the number of sequences in each batch
     n_super_seqs = y_train.shape[2]
@@ -48,11 +53,21 @@ def train_tf_graph(
     y_test_reshaped = y_test_seqs.reshape((y_test.shape[0]*y_test.shape[2], y_test.shape[1]))
     m_test_reshaped = m_test_seqs.reshape((m_test.shape[0]*m_test.shape[2], m_test.shape[1]))
 
+    # Reshape the prediction data; as with test data, just once is plenty
+    if save_preds:
+        x_pred_seqs = np.transpose(x_pred, (3,0,1,2))
+        x_pred_reshaped = x_pred_seqs.reshape((x_pred.shape[0]*x_pred.shape[3], x_pred.shape[1], x_pred.shape[2]))
+
     # Prepare a NN saver
     saver = tf.train.Saver(max_to_keep=max_to_keep) # tells tf to prepare to save the graph we've defined so far
 
     # Initialize merr to a flag value so we know to replace it with the first computed test loss
     merr = -1
+
+    # Initialize arrays to hold the training progress information
+    train_stat_names = ('loss_total', 'loss_RMSE', 'loss_DD', 'loss_EC')
+    train_stats = np.full((n_epochs, batches_per_epoch, len(train_stat_names)), np.nan, dtype=np.float64)
+    test_loss_RMSE = np.full((n_epochs), np.nan, dtype=np.float64)
 
     with tf.Session() as sess:
 
@@ -121,20 +136,23 @@ def train_tf_graph(
                                 unsup_phys_data: p_unsup_batch
                 })
 
+                # Store stats
+                train_stats[epoch, batch, :] = [loss, rc, np.nan, ec]
+
                 # Report training losses
                 print(
                     "Epoch " + str(epoch) \
                     + ", batch " + str(batch) \
-                    + ", loss_train " + "{:.4f}".format(loss) \
-                    + ", Rc " + "{:.4f}".format(rc) \
-                    + ", Ec " + "{:.4f}".format(ec))
+                    + ": loss_train " + "{:.4f}".format(loss) \
+                    + ", loss_RMSE " + "{:.4f}".format(rc) \
+                    + ", loss_EC " + "{:.4f}".format(ec))
 
             if epoch >= min_epochs_test - 1:
-                # Calculate loss and temperature predictions (prd) for test set
-                loss_test, prd = sess.run(
+                # Calculate and store RMSE-only loss for test set
+                test_loss_RMSE[epoch] = sess.run(
                         # note that this first arg doesn't include train_op, so we're not updating the model
                         # now that we're applying to the test set
-                        [r_cost, pred],
+                        r_cost,
                         feed_dict = {
                                 x: x_test_reshaped,
                                 y: y_test_reshaped,
@@ -143,20 +161,29 @@ def train_tf_graph(
 
                 # Initialize merr if needed
                 if merr == -1:
-                    merr = loss_test
+                    merr = test_loss_RMSE[epoch]
 
                 # Save the predictions and/or model state if this is the minimum loss we've seen
-                if merr > loss_test:
-                    merr = loss_test
-                    if epoch >= min_epochs_save - 1: # (and only do this saving if we're already past some # of epochs)
-                        save_file = saver.save(sess, "%s/checkpoint_%03d" % (save_path, epoch))
-                        print("  Model saved to %s" % save_file)
+                # TODO: Could implement a more complete early stopping routine a la https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/EarlyStopping
+                # TODO: Any use of the test data, including early stopping, should really use a separate validation set rather than the test set
+                if merr > test_loss_RMSE[epoch]:
+                    merr = test_loss_RMSE[epoch]
+                    # (and only do this saving if we're already past some # of epochs)
+                    if epoch >= min_epochs_save - 1:
+                        model_save_file = saver.save(sess, "%s/checkpoint_%03d" % (save_path, epoch))
+                        print("  Model saved to %s" % model_save_file)
+                        # (and only save preds if requested)
                         if save_preds:
-                            np.save('%s/preds.npy' % save_path, prd)
+                            # Generate and save temperature predictions (prd) for the full dataset
+                            prd = sess.run(pred, feed_dict = {x: x_pred_reshaped})
+                            data_save_file = '%s/preds.npy' % save_path
+                            np.save(data_save_file, prd)
+                            print("  Predictions saved to %s" % data_save_file)
 
                 # Report test losses
                 print(
-                    "  loss_test " + "{:.4f}".format(loss_test) \
-                    + ", min_loss " + "{:.4f}".format(merr) )
+                    "  Epoch " + str(epoch) \
+                    + ": test_RMSE " + "{:.4f}".format(test_loss_RMSE[epoch]) \
+                    + ", min_test_RMSE " + "{:.4f}".format(merr) )
 
-    return prd
+    return train_stats, test_loss_RMSE, prd
