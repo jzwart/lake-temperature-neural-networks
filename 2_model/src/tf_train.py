@@ -12,8 +12,8 @@ import tensorflow as tf
 def train_tf_graph(
         train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data,
         x_train, y_train, m_train, x_unsup, p_unsup, x_test, y_test, m_test, x_pred,
-        seq_per_batch, n_epochs=300, min_epochs_test=0, min_epochs_save=250,
-        restore_path='', save_path='./out/EC_mille/pretrain', max_to_keep=3, save_preds=True):
+        sequence_offset, seq_per_batch, n_epochs=300, min_epochs_test=0, min_epochs_save=300,
+        restore_path='', save_path='./out/EC_mille/pretrain'):
     """Trains a tensorflow graph for the PRGNN model
 
     Args:
@@ -27,14 +27,13 @@ def train_tf_graph(
         y_test: Observations for testing
         m_test: Observation mask for testing
         x_pred: Input data for final prediction
+        sequence_offset: Number of observations by which each data sequence in inputs['predict.features'] is offset from the previous sequence. Used to reconstruct a complete prediction sequence without duplicates.
         seq_per_batch: Number of sequences to include per batch
         n_epochs: Total number of epochs to run during training. Needs to be larger than the n epochs needed for the model to converge
         min_epochs_test: Minimum number of epochs to run through before computing test losses
         min_epochs_save: Minimum number of epochs to run through before considering saving a checkpoint (must be >= min_epochs_test)
         restore_path: Path to restore a model from, or ''
         save_path: Path (directory) to save a model to. Will always be saved as ('checkpoint_%s' %>% epoch)
-        max_to_keep: Max number of checkpoints to keep in the save_path
-        save_preds: Logical - should test predictions be saved (and ovewritten) each time we save a checkpoint?
     """
 
     # Make sure the save path exists
@@ -54,15 +53,11 @@ def train_tf_graph(
     m_test_reshaped = m_test_seqs.reshape((m_test.shape[0]*m_test.shape[2], m_test.shape[1]))
 
     # Reshape the prediction data; as with test data, just once is plenty
-    if save_preds:
-        x_pred_seqs = np.transpose(x_pred, (3,0,1,2))
-        x_pred_reshaped = x_pred_seqs.reshape((x_pred.shape[0]*x_pred.shape[3], x_pred.shape[1], x_pred.shape[2]))
+    x_pred_seqs = np.transpose(x_pred, (3,0,1,2))
+    x_pred_reshaped = x_pred_seqs.reshape((x_pred.shape[0]*x_pred.shape[3], x_pred.shape[1], x_pred.shape[2]))
 
     # Prepare a NN saver
-    saver = tf.train.Saver(max_to_keep=max_to_keep) # tells tf to prepare to save the graph we've defined so far
-
-    # Initialize merr to a flag value so we know to replace it with the first computed test loss
-    merr = -1
+    saver = tf.train.Saver(max_to_keep=1) # tells tf to prepare to save the graph we've defined so far
 
     # Initialize arrays to hold the training progress information
     train_stat_names = ('loss_total', 'loss_RMSE', 'loss_DD', 'loss_EC')
@@ -147,8 +142,8 @@ def train_tf_graph(
                     + ", loss_RMSE " + "{:.4f}".format(rc) \
                     + ", loss_EC " + "{:.4f}".format(ec))
 
+            # Calculate, store, and report RMSE-only loss for test set if & when requested
             if epoch >= min_epochs_test - 1:
-                # Calculate and store RMSE-only loss for test set
                 test_loss_RMSE[epoch] = sess.run(
                         # note that this first arg doesn't include train_op, so we're not updating the model
                         # now that we're applying to the test set
@@ -158,32 +153,34 @@ def train_tf_graph(
                                 y: y_test_reshaped,
                                 m: m_test_reshaped
                 })
-
-                # Initialize merr if needed
-                if merr == -1:
-                    merr = test_loss_RMSE[epoch]
-
-                # Save the predictions and/or model state if this is the minimum loss we've seen
-                # TODO: Could implement a more complete early stopping routine a la https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/EarlyStopping
-                # TODO: Any use of the test data, including early stopping, should really use a separate validation set rather than the test set
-                if merr > test_loss_RMSE[epoch]:
-                    merr = test_loss_RMSE[epoch]
-                    # (and only do this saving if we're already past some # of epochs)
-                    if epoch >= min_epochs_save - 1:
-                        model_save_file = saver.save(sess, "%s/checkpoint_%03d" % (save_path, epoch))
-                        print("  Model saved to %s" % model_save_file)
-                        # (and only save preds if requested)
-                        if save_preds:
-                            # Generate and save temperature predictions (prd) for the full dataset
-                            prd = sess.run(pred, feed_dict = {x: x_pred_reshaped})
-                            data_save_file = '%s/preds.npy' % save_path
-                            np.save(data_save_file, prd)
-                            print("  Predictions saved to %s" % data_save_file)
-
-                # Report test losses
                 print(
-                    "  Epoch " + str(epoch) \
-                    + ": test_RMSE " + "{:.4f}".format(test_loss_RMSE[epoch]) \
-                    + ", min_test_RMSE " + "{:.4f}".format(merr) )
+                    "  Test RMSE: {:.4f}".format(test_loss_RMSE[epoch]))
 
-    return train_stats, test_loss_RMSE, prd
+            # Save the model state if & when requested
+            if epoch >= min_epochs_save - 1:
+                model_save_file = saver.save(sess, "%s/model" % save_path)
+                print("  Model state saved to %s.*" % model_save_file)
+
+            # Generate temperature predictions (prd) for the full dataset after last epoch
+            if epoch == n_epochs - 1:
+                preds_raw = sess.run(pred, feed_dict = {x: x_pred_reshaped})
+                # Reshape the raw predictions into a single depth-by-time matrix of best predictions
+                n_depths, n_dates, n_seqs = (x_pred.shape[0], x_pred.shape[1], x_pred.shape[3]) # get some dimensions
+                start_best_dates = n_dates - sequence_offset # start index of the best preds in each sequence
+                preds_init = preds_raw[0:n_depths, 0:start_best_dates, 0] # the not-great but only-available initial preds
+                preds_last = preds_raw[0:(n_depths*n_seqs), start_best_dates:n_dates, 0] \
+                    .reshape((n_seqs, n_depths, sequence_offset)) \
+                    .transpose((1 ,0, 2)) \
+                    .reshape(n_depths, sequence_offset * n_seqs) # the best preds from every sequence, reshaped into matrix
+                preds_best = np.concatenate((preds_init, preds_last), axis=1) # combo of init and last
+                # Save
+                pred_save_file = '%s/preds.npy' % save_path
+                np.savez_compressed(pred_save_file, preds_raw=preds_raw, preds_best=preds_best)
+                print("  Predictions saved to %s" % pred_save_file)
+
+    # Save the model diagnostics
+    stat_save_file = '%s/stats.npz' % save_path
+    np.savez_compressed(stat_save_file, train_stats=train_stats, test_loss_RMSE=test_loss_RMSE)
+    print("  Diagnostics saved to %s" % stat_save_file)
+
+    return(train_stats, test_loss_RMSE, preds_best)
