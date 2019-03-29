@@ -21,14 +21,13 @@ def apply_pgnn(
         plam = 0.15, # TODO: implement depth-density constraint in model
         elam = 0.025, # original mille lacs values were 0.0005, 0.00025
         data_file = '1_format/tmp/pgdl_inputs/nhd_1099476.npz',
+        sequence_offset = 100,
         max_batch_obs = 50000,
         n_epochs = 5, # 200 is usually more than enough
         min_epochs_test = 0,
-        min_epochs_save = 5, # later is recommended
+        min_epochs_save = 5, # later is recommended (runs quickest if ==n_epochs)
         restore_path = '', #'2_model/out/EC_mille/pretrain',
-        save_path = '2_model/tmp/nhd_1099476',
-        max_to_keep = 1,
-        save_preds = True
+        save_path = '2_model/tmp/nhd_1099476/pretrain'
         # TODO: should have L1 and L2 norm weights in this list, implemented in tf_graph
     ):
     """Train (or pretrain) a PGRNN, optionally save the weights+biases and/or predictions, and return the predictions
@@ -40,14 +39,13 @@ def apply_pgnn(
         plam: PRESENTLY IGNORED. physics (depth-density) constraint lambda, multiplier to physics loss when adding to other losses
         elam: energy constraint lambda, multiplier to energy balance loss when adding to other losses
         data_file: Filepath for the one file per lake that contains all the data.
+        sequence_offset: Number of observations by which each data sequence in inputs['predict.features'] is offset from the previous sequence. Used to reconstruct a complete prediction sequence without duplicates.
         max_batch_obs: Upper limit on number of individual temperature predictions (date-depth-split combos) per batch. True batch size will be computed as the largest number of completes sequences for complete depth profiles that fit within this max_batch_size.
         n_epochs: Total number of epochs to run during training. Needs to be larger than the n epochs needed for the model to converge
         min_epochs_test: Minimum number of epochs to run through before computing test losses
         min_epochs_save: Minimum number of epochs to run through before considering saving a checkpoint (must be >= min_epochs_test)
         restore_path: Path to restore a model from, or ''
         save_path: Path (directory) to save a model to. Will always be saved as ('checkpoint_%s' %>% epoch)
-        max_to_keep: Max number of checkpoints to keep in the save_path
-        save_preds: Logical - should test predictions be saved (and ovewritten) each time we save a checkpoint?
     """
 
     random.seed(9001)
@@ -69,42 +67,40 @@ def apply_pgnn(
 
     # %% Train model
     print('Training model...')
+    x_unsup = inputs['unsup.features']
+    p_unsup = inputs['unsup.physics']
+    x_pred = inputs['predict.features']
     if phase == 'tune':
-        train_stats, test_loss_RMSE, preds = tf_train.train_tf_graph(
-                train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data,
-                inputs['tune_train.features'], inputs['tune_train.labels'], inputs['tune_train.mask'],
-                inputs['unsup.features'], inputs['unsup.physics'],
-                inputs['tune_test.features'], inputs['tune_test.labels'], inputs['tune_test.mask'], # test on training data
-                inputs['predict.features'],
-                seq_per_batch=seq_per_batch, n_epochs=n_epochs, min_epochs_test=min_epochs_test, min_epochs_save=min_epochs_save,
-                restore_path=restore_path, save_path=save_path, max_to_keep=max_to_keep, save_preds=save_preds)
+        x_train = inputs['tune_train.features']
+        y_train = inputs['tune_train.labels']
+        m_train = inputs['tune_train.mask']
+        x_test = inputs['tune_test.features']
+        y_test = inputs['tune_test.labels']
+        m_test = inputs['tune_test.mask']
     elif phase == 'pretrain':
-        train_stats, test_loss_RMSE, preds = tf_train.train_tf_graph(
-                train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data,
-                inputs['pretrain.features'], inputs['pretrain.labels'], inputs['pretrain.mask'],
-                inputs['unsup.features'], inputs['unsup.physics'],
-                inputs['pretrain.features'], inputs['pretrain.labels'], inputs['pretrain.mask'], # test on training data
-                inputs['predict.features'],
-                seq_per_batch=seq_per_batch, n_epochs=n_epochs, min_epochs_test=min_epochs_test, min_epochs_save=min_epochs_save,
-                restore_path=restore_path, save_path=save_path, max_to_keep=max_to_keep, save_preds=save_preds)
+        x_train = inputs['pretrain.features']
+        y_train = inputs['pretrain.labels']
+        m_train = inputs['pretrain.mask']
+        x_test = inputs['pretrain.features'] # test on training data
+        y_test = inputs['pretrain.labels']
+        m_test = inputs['pretrain.mask']
     elif phase == 'train':
-        train_stats, test_loss_RMSE, preds = tf_train.train_tf_graph(
-                train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data,
-                inputs['train.features'], inputs['train.labels'], inputs['train.mask'],
-                inputs['unsup.features'], inputs['unsup.physics'],
-                inputs['test.features'], inputs['test.labels'], inputs['test.mask'],
-                inputs['predict.features'],
-                seq_per_batch=seq_per_batch, n_epochs=n_epochs, min_epochs_test=min_epochs_test, min_epochs_save=min_epochs_save,
-                restore_path=restore_path, save_path=save_path, max_to_keep=max_to_keep, save_preds=save_preds)
+        x_train = inputs['train.features']
+        y_train = inputs['train.labels']
+        m_train = inputs['train.mask']
+        x_test = inputs['test.features']
+        y_test = inputs['test.labels']
+        m_test = inputs['test.mask']
     else:
         print("Error: unrecognized phase '%s'"% phase)
 
-    # %% Save model diagnostics
-    stats_save_file = '%s/preds.npy' % save_path
-    np.savez_compressed(stats_save_file, train_stats=train_stats, test_loss_RMSE=test_loss_RMSE)
-    print("  Diagnostics saved to %s" % stats_save_file)
+    train_stats, test_loss_RMSE, preds = tf_train.train_tf_graph(
+            train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data,
+            x_train, y_train, m_train, x_unsup, p_unsup, x_test, y_test, m_test, x_pred,
+            sequence_offset=sequence_offset, seq_per_batch=seq_per_batch, n_epochs=n_epochs, min_epochs_test=min_epochs_test, min_epochs_save=min_epochs_save,
+            restore_path=restore_path, save_path=save_path)
 
-    return(preds)
+    return(train_stats, test_loss_RMSE, preds)
     # %% Inspect predictions
 
     # prd has dimensions [depths*batches, n timesteps per batch, 1]
