@@ -1,51 +1,23 @@
 target_default: 2_model
 
 packages:
-  - tidyr
-  - stringr
   - dplyr
-  - zeallot
   - scipiper
+  - tibble
+  - tidyr
 
 sources:
   - lib/src/utils.R
-  - lib/src/require_local.R
-  - 2_model/src/models.R
+  - 2_model/src/config.R
   - 2_model/src/model_tasks.R
-  - 2_model/src/evaluate.R
-  - 2_model/src/fetch_formatted_data_tasks.R
 
 targets:
   2_model:
     depends:
       - 2_model/log/2_model_tasks.ind
 
-  # get status of pgdl_input files
-  1_format/log/pgdl_inputs.ind:
-    command: retrieve_lake_data(
-      out_ind = target_name,
-      priority_lakes = priority_lakes,
-      file_column = I('drivers_file'),
-      yeti_path = drivers_yeti_path)
+  models_config:
+    command: create_model_config(
+      priority_lakes,
+      sequence_cfg)
 
-  #site_ids:
- #   command: get_site_ids(file = 'lib/crosswalks/pipeline_3_lakes.csv')
-
-  training_task_plan:
-    command: create_training_task_plan(
-      priority_lakes, ind_dir = I("2_model"))
-
-  2_fetch_formatted_data_tasks.yml:
-    command: create_task_makefile(makefile=target_name, task_plan = fetch_formatted_data_task_plan, include = I("2_model.yml"))
-
-  2_model/log/2_fetch_formatted_data_tasks.ind:
-    command: loop_tasks(task_plan = fetch_formatted_data_task_plan, task_makefile = "2_fetch_formatted_data_tasks.yml", num_tries = 2)
-
-  model_task_plan:
-    command: create_model_task_plan(priority_lakes, model_cfg)
-
-  2_model_tasks.yml:
-    command: create_model_task_makefile(task_plan = model_task_plan, makefile = target_name, ind_complete = TRUE)
-
-  2_model/log/2_model_tasks.ind:
-    command: loop_tasks(task_plan = model_task_plan, task_makefile = '2_model_tasks.yml', num_tries = 1)
