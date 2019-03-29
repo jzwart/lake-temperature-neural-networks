@@ -15,7 +15,8 @@ Rlib/
 lib/cfg/user_settings.yml
 
 # some build info
-.remake
+.remake/
+.drake/
 *tasks.yml
 
 # data and temporary files
