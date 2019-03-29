@@ -174,7 +174,7 @@ def train_tf_graph(
                     .reshape(n_depths, sequence_offset * n_seqs) # the best preds from every sequence, reshaped into matrix
                 preds_best = np.concatenate((preds_init, preds_last), axis=1) # combo of init and last
                 # Save
-                pred_save_file = '%s/preds.npy' % save_path
+                pred_save_file = '%s/preds.npz' % save_path
                 np.savez_compressed(pred_save_file, preds_raw=preds_raw, preds_best=preds_best)
                 print("  Predictions saved to %s" % pred_save_file)
 
