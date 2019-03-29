@@ -4,7 +4,12 @@
 .RData
 .spyproject/
 
+# R libraries on Yeti
+Rlib/
+
 # user-specific info
+.Rprofile
+.Renviron
 .Ruserdata
 .httr-oauth
 lib/cfg/user_settings.yml
