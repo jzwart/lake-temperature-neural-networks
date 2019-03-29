@@ -16,8 +16,14 @@ targets:
     depends:
       - 2_model/log/2_model_tasks.ind
 
-  models_config:
+  train_config:
     command: create_model_config(
+      phase = I('pretrain_train'),
       priority_lakes,
+      pgdl_inputs_ind = '1_format/log/pgdl_inputs.ind',
       sequence_cfg)
 
+  2_model/log/pgdl_outputs.ind:
+    command: run_model_tasks(
+      target_name,
+      train_config)

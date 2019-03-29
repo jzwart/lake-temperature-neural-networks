@@ -8,6 +8,7 @@ Created on Wed Dec 12 18:06:57 2018
 from __future__ import print_function, division
 import random
 import sys
+import datetime as dt
 import numpy as np
 sys.path.append('2_model/src')
 import tf_graph
@@ -47,6 +48,9 @@ def apply_pgnn(
         restore_path: Path to restore a model from, or ''
         save_path: Path (directory) to save a model to. Will always be saved as ('checkpoint_%s' %>% epoch)
     """
+
+    # Track runtime
+    start_time = dt.datetime.now()
 
     random.seed(9001)
 
@@ -99,6 +103,16 @@ def apply_pgnn(
             x_train, y_train, m_train, x_unsup, p_unsup, x_test, y_test, m_test, x_pred,
             sequence_offset=sequence_offset, seq_per_batch=seq_per_batch, n_epochs=n_epochs, min_epochs_test=min_epochs_test, min_epochs_save=min_epochs_save,
             restore_path=restore_path, save_path=save_path)
+
+    # Track runtime, part 2
+    end_time = dt.datetime.now()
+    run_time = end_time - start_time
+
+    # Save the model diagnostics
+    stat_save_file = '%s/stats.npz' % save_path
+    np.savez_compressed(stat_save_file, train_stats=train_stats, test_loss_RMSE=test_loss_RMSE,
+                        start_time=start_time, end_time=end_time, run_time=run_time)
+    print("  Diagnostics saved to %s" % stat_save_file)
 
     return(train_stats, test_loss_RMSE, preds)
     # %% Inspect predictions

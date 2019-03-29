@@ -1,4 +1,4 @@
-run_job <- function(data_file, restore_file, model_save_file, stats_save_file, config) {
+run_job <- function(data_file, restore_dir, save_dir, config) {
   py_args <- config %>% mutate(
     args = psprintf(
       '--phase="%s"'=phase,
@@ -18,6 +18,7 @@ run_job <- function(data_file, restore_file, model_save_file, stats_save_file, c
       sep=' '
     )) %>%
     pull(args)
+  print(sprintf('python 2_model/src/run_job.py %s', py_args))
 
   system(sprintf('python 2_model/src/run_job.py %s', py_args))
 }

@@ -178,9 +178,4 @@ def train_tf_graph(
                 np.savez_compressed(pred_save_file, preds_raw=preds_raw, preds_best=preds_best)
                 print("  Predictions saved to %s" % pred_save_file)
 
-    # Save the model diagnostics
-    stat_save_file = '%s/stats.npz' % save_path
-    np.savez_compressed(stat_save_file, train_stats=train_stats, test_loss_RMSE=test_loss_RMSE)
-    print("  Diagnostics saved to %s" % stat_save_file)
-
     return(train_stats, test_loss_RMSE, preds_best)
