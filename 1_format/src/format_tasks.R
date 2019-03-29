@@ -6,7 +6,8 @@ create_format_task_plan <- function(
   obs_tmpind = '1_format/tmp/obs.tmpind',
   geometry_tmpind = '1_format/tmp/geometry.tmpind',
   glm_preds_tmpind = '1_format/tmp/glm_preds.tmpind',
-  drivers_tmpind = '1_format/tmp/drivers.tmpind') {
+  drivers_tmpind = '1_format/tmp/drivers.tmpind',
+  sequence_cfg) {
 
   # read in vectors of file hashes, named by file names, for input files pulled
   # from Yeti and Drive
@@ -62,7 +63,9 @@ create_format_task_plan <- function(
           "obs_file = I('%s')," = lake_inputs$obs_file,
           "geometry_file = I('%s')," = lake_inputs$geometry_file,
           "glm_preds_file = I('%s')," = lake_inputs$glm_preds_file,
-          "drivers_file = I('%s'))" = lake_inputs$drivers_file)
+          "drivers_file = I('%s')," = lake_inputs$drivers_file,
+          "sequence_length = %d," = sequence_cfg$sequence_length,
+          "sequence_offset = %d)" = sequence_cfg$sequence_offset)
       }
     ),
     create_task_step(

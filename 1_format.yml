@@ -41,6 +41,8 @@ targets:
     command: settings[[I(c('drivers_yeti_path'))]]
   drivers_time:
     command: settings[[I(c('drivers_time'))]]
+  sequence_cfg:
+    command: settings[I(c('sequence_length','sequence_offset'))]
   pgdl_inputs_yeti_path:
     command: settings[[I(c('pgdl_inputs_yeti_path'))]]
 
@@ -146,7 +148,8 @@ targets:
       obs_tmpind = '1_format/tmp/obs.tmpind',
       geometry_tmpind = '1_format/tmp/geometry.tmpind',
       glm_preds_tmpind = '1_format/tmp/glm_preds.tmpind',
-      drivers_tmpind = '1_format/tmp/drivers.tmpind')
+      drivers_tmpind = '1_format/tmp/drivers.tmpind',
+      sequence_cfg = sequence_cfg)
 
   1_format_tasks.yml:
     command: create_format_task_makefile(
