@@ -4,3 +4,7 @@ glm_preds_yeti_path: '/cxfs/projects/usgs/water/iidd/data-sci/lake-temp/glm-pred
 drivers_yeti_path: '/cxfs/projects/usgs/water/iidd/data-sci/lake-temp/driver-data'
 drivers_time: '0.350500'
 pgdl_inputs_yeti_path: '/cxfs/projects/usgs/water/iidd/data-sci/lake-temp/lake-temperature-neural-networks-apa/1_format/tmp/pgdl_inputs'
+
+# 1_format.yml and 2_model.yml
+sequence_length: 200
+sequence_offset: 68

@@ -55,11 +55,13 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
     pred = tf.stack(pred,axis=1) # converts the preds list to a tensorflow array. [n depths, n timesteps, 1] (the last dimension isn'd really needed; we'll remove it later)
     pred_s = tf.reshape(pred,[-1,1]) # collapse from 3D [depths, timesteps, 1] to 2D [depths * timesteps, 1]
     y_s = tf.reshape(y,[-1,1])
-    m_s = tf.where(tf.is_nan(y_s), tf.zeros_like(y_s), y_s) # tf.reshape(m,[-1,1]) # this is the mask of 0s and 1s (1 means the observation exists)
 
-    # Compute cost as RMSE with masking (tf.where replaces pred_s-y_s with 0 when y_s is nan)
+    # Compute cost as RMSE with masking (the tf.where call replaces pred_s-y_s
+    # with 0 when y_s is nan; num_y_s is a count of just those non-nan observations)
     # so we're only looking at predictions with corresponding observations available
-    r_cost = tf.sqrt(tf.reduce_sum(tf.square((tf.where(tf.is_nan(y_s), tf.zeros_like(y_s), pred_s - y_s)))) / tf.reduce_sum(m_s))
+    num_y_s = tf.cast(tf.count_nonzero(~tf.is_nan(y_s)), tf.float32)
+    zero_or_error = tf.where(tf.is_nan(y_s), tf.zeros_like(y_s), pred_s - y_s)
+    r_cost = tf.sqrt(tf.reduce_sum(tf.square(zero_or_error)) / num_y_s)
     # the only other cost function we might reasonably consider besides RMSE might be MAE...but they're quite similar
 
     ### EC penalization (using unsupervised learning, which allows us to use a larger dataset than the above supervised learning can

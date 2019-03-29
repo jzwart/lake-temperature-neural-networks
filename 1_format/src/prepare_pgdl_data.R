@@ -226,10 +226,10 @@ split_pgdl_data <- function(tidied, sequence_length, sequence_offset) {
       summarize(driver_date = TRUE) %>%
       mutate(glm_shoulder = ifelse(date < glm_date_range[1], 'left', ifelse(date > glm_date_range[2], 'right', 'none'))) %>%
       mutate(obs_shoulder = ifelse(date < obs_date_range[1], 'left', ifelse(date > obs_date_range[2], 'right', 'none')))
-    target_num_driver_dates <- sequence_length + (sequence_length - sequence_offset) *
+    target_num_driver_dates <- sequence_length + sequence_offset *
       floor( # number of whole sequences possible after the first one
         (nrow(driver_dates) - sequence_length) / # the first sequence is always sequence_length
-          (sequence_length - sequence_offset)) # subsequent sequences each require seq_len-seq_off more obs
+          sequence_offset) # subsequent sequences each require seq_off more obs
     stopifnot(target_num_driver_dates <= nrow(driver_dates)) # make sure we're not requiring more dates than we have
     # first drop as many as we can from the righthand side where there are no observations
     target_drop_driver_dates <- nrow(driver_dates) - target_num_driver_dates
@@ -254,9 +254,8 @@ split_pgdl_data <- function(tidied, sequence_length, sequence_offset) {
     # actually truncate the data
     return(filter(drivers, date %in% driver_dates$date))
   }
-  drivers <- truncate_drivers(drivers, glm_preds, obs)
 
-  #### Helpers functions for splitting ####
+  #### Helper functions for splitting ####
 
   # function to normalize the driver data into features. We will use this
   # function right after creating the relevant splits. This takes the driver
@@ -307,9 +306,13 @@ split_pgdl_data <- function(tidied, sequence_length, sequence_offset) {
     target_n_dates <- sequence_length + # there's always one first sequence (see previous line)
       ceiling((target_n_dates - sequence_length) / sequence_offset) * sequence_offset # add sequences to cover the core dates + min_buffer
 
+    # pessimistically round down to the max number of driver dates that would fill an integer number of sequences
+    round_n_driver_dates <- sequence_length + # there's always one first sequence (see previous line)
+      floor((n_driver_dates - sequence_length) / sequence_offset) * sequence_offset # add sequences to cover the core dates + min_buffer
+
     # be realistic about the final buffer; can't have more total length than we
-    # have drivers
-    target_n_dates <- min(target_n_dates, n_driver_dates)
+    # have drivers that divide evenly into sequences
+    target_n_dates <- min(target_n_dates, round_n_driver_dates)
 
     # compute padding to the left and right, prioritizing padding left first
     target_n_pad_dates <- target_n_dates - n_core_dates
@@ -409,7 +412,7 @@ split_pgdl_data <- function(tidied, sequence_length, sequence_offset) {
       }
       # pick out the two shoulders worth of labels
       one_slice$labels <- list(
-        left =  obs %>%
+        left = obs %>%
           restrict(filter(obs_non_na, date >= date_cutoffs[1] & date <= date_cutoffs[2])) %>%
           buffer(),
         right = obs %>%
@@ -509,7 +512,7 @@ split_pgdl_data <- function(tidied, sequence_length, sequence_offset) {
 
   # For prediction, use the full driver dataset (no need to restrict to just
   # those days with Ice estimates)
-  datasets$predict$features <- drivers
+  datasets$predict$features <- normalize(truncate_drivers(drivers, glm_preds, obs))
 
   return(datasets)
 }
@@ -627,7 +630,7 @@ reshape_data_to_sequences <- function(splits, depths, sequence_length, sequence_
       # create a complete list of arrays, one per sequence
       seq_arrs <- lapply(phase_element_shoulders, function(shoulder) {
         n_sequences <- 1 + (length(unique(shoulder$date)) - sequence_length) / sequence_offset
-        stopifnot(n_sequences %% 1 == 0) # n_batches should be an integer
+        stopifnot(n_sequences %% 1 == 0) # n_sequences should be an integer
 
         # split into sequences and pack into 3D or 4D matrix
         pb <- progress::progress_bar$new(total = n_sequences, format = "[:bar] :current/:total (:percent)")
