@@ -1,12 +1,12 @@
 version: 0.3.0
 name: 2_model/log/pgdl_outputs.ind
 type: file
-hash: 1a95150020508a362535b85a71ea38c6
-time: 2019-03-31 16:33:52 UTC
+hash: 6cf3c138d16254c592e90dbc14b5721e
+time: 2019-03-31 18:47:02 UTC
 depends:
-  train_config: 891f18f9858c79564fdd2d0e34ef73c0
+  2_model/out/train_config.tsv: c513cbada821dad100f4d6bfc557e7dd
 fixed: 700e9d7defe08fc1450fb8435d376b8d
 code:
   functions:
-    run_model_tasks: b009482c7b41bb1ccad491cd7d417bfe
+    run_model_tasks: a180d9ed473360fbd6133dff9f9848da
 
