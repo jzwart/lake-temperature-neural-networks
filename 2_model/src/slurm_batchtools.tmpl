@@ -23,15 +23,15 @@
 log.file = normalizePath(log.file, winslash = "/", mustWork = FALSE)
 -%>
 
-#SBATCH -A watertemp           # your account
-#SBATCH -p normal              # the partition you want to use - for GPUs, use UV
+#SBATCH --account=watertemp
+#SBATCH --partition=UV
 #SBATCH --job-name=<%= job.name %>
 #SBATCH --output=<%= log.file %>
 #SBATCH --error=<%= log.file %>
 #SBATCH --time=<%= resources$walltime %>
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=<%= resources$ncpus %>
-#SBATCH --gres=gpu:<%= resources$gpu.type %>:<%= resources$ngpus %>
+#SBATCH --gres=gpu:<%=resources$gpu.type%>:<%=resources$ngpus%>
 
 <%= if (array.jobs) sprintf("#SBATCH --array=1-%i", nrow(jobs)) else "" %>
 
