@@ -1,4 +1,8 @@
-run_job <- function(data_file, restore_dir, save_dir, config) {
+#' @param config All the configuration information we need to send to python to
+#'   run the job
+#' @param ... File dependencies (passed with file_in() and file_out() from the
+#'   drake plan)
+run_job <- function(config, ...) {
   py_args <- config %>% mutate(
     args = psprintf(
       '--phase="%s"'=phase,
@@ -18,7 +22,8 @@ run_job <- function(data_file, restore_dir, save_dir, config) {
       sep=' '
     )) %>%
     pull(args)
-  print(sprintf('python 2_model/src/run_job.py %s', py_args))
 
-  system(sprintf('python 2_model/src/run_job.py %s', py_args))
+  py_call <- sprintf('python 2_model/src/run_job.py %s', py_args)
+  print(py_call) # print() displays right away in the R console, whereas message() doesn't display until the model has run
+  system(py_call)
 }

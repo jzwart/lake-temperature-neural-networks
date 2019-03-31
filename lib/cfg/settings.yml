@@ -7,4 +7,4 @@ pgdl_inputs_yeti_path: '/cxfs/projects/usgs/water/iidd/data-sci/lake-temp/lake-t
 
 # 1_format.yml and 2_model.yml
 sequence_length: 200
-sequence_offset: 68
+sequence_offset: 100

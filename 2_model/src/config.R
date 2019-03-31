@@ -47,9 +47,21 @@ create_model_config <- function(phase=c('tune','pretrain_train'), priority_lakes
       ) %>% bind_rows(
         template, .
       ) %>% mutate(
-        # use object hashes to name the models so that even if we change the order, the hash won't change
-        save_path = sprintf('2_model/tmp/%s/tune/t%s', site_id, sapply(1:n(), function(row) { digest::digest(select(., -save_path)[row,]) }))
-      )
+        # define a task id we can use to name the drake targets and models. use
+        # a hash in the name so that it's concise and yet won't change even if
+        # we change the config row order. use symbols because otherwise drake
+        # will quote with '.'s in the task names (ugly). use a similar naming
+        # scheme for saving the models
+        task_hash = sapply(1:n(), function(row) { digest::digest(select(., -save_path)[row,]) }),
+        task_id = rlang::syms(sprintf('%s.%s', site_id, task_hash)),
+        save_path = sprintf('2_model/tmp/%s/tune/%s', site_id, task_hash)
+      ) %>%
+        # attach site_id last so site_id remains a length-1 vector when
+        # computing data_file, restore_path, etc. (even though we have 2 tibble
+        # rows per site because phase is length 2)
+        mutate(site_id = site_id) %>%
+        # bind to the template to standardize the column order
+        bind_rows(template, .)
     }))
   } else if(phase == 'pretrain_train') {
     # config for pretrain and train
@@ -70,12 +82,23 @@ create_model_config <- function(phase=c('tune','pretrain_train'), priority_lakes
         restore_path = c('',sprintf('2_model/tmp/%s/pretrain', site_id)),
         save_path = sprintf('2_model/tmp/%s/%s', site_id, phase)
       ) %>%
+        # attach site_id last so site_id remains a length-1 vector when
+        # computing data_file, restore_path, etc. (even though we have 2 tibble
+        # rows per site because phase is length 2)
         mutate(site_id = site_id) %>%
+        # bind to the template to standardize the column order
         bind_rows(template, .)
-    }))
+    })) %>%
+      # attach suggestion for how to name the drake targets. use symbols because
+      # otherwise drake will quote with '.'s in the task names (ugly)
+      mutate(task_id = rlang::syms(sprintf('%s.%s', site_id, phase)))
   }
 
-  # Attach data file hashes to the config table
+  # Attach attach information drake can use to extract one config row per target
+  config <- config %>% mutate(row = 1:n())
+
+  # Attach data file hashes to the config table. drake doesn't use this info,
+  # but this is how remake knows when to build and run the drake plan again
   pgdl_inputs_md5 <- unlist(yaml::yaml.load_file(pgdl_inputs_ind)) # Read in the model-ready data file hashes, named by file names
   config <- config %>% # Augment the config table with the file hashes
     mutate(pgdl_inputs_md5 = pgdl_inputs_md5[data_file])

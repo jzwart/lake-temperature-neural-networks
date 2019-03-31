@@ -16,6 +16,18 @@ targets:
     depends:
       - 2_model/log/2_model_tasks.ind
 
+  # We're not actually doing hypertuning yet, but here's a start on the config for that effort
+  hypertune_config:
+    command: create_model_config(
+      phase = I('tune'),
+      priority_lakes,
+      pgdl_inputs_ind = '1_format/log/pgdl_inputs.ind',
+      sequence_cfg)
+
+  # If and when we're actually doing hyperparameter tuning, at this point we'd need to
+  # identify the best parameter set for each lake and use that to adjust the following
+  # config info for final pretraining and training
+
   train_config:
     command: create_model_config(
       phase = I('pretrain_train'),
