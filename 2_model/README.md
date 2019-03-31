@@ -17,6 +17,8 @@ I think we should install R packages in a local directory so we can all share th
 R_LIBS=/cxfs/projects/usgs/water/iidd/data-sci/lake-temp/Rlib
 ```
 
+## Installing R packages
+
 We'll need these packages installed:
 
 - drake
@@ -33,3 +35,16 @@ Error: package or namespace load failed for ‘drake’ in dyn.load(file, DLLpat
 I also needed a more modern gcc to install data.table, which is a dependency of future.batchtools, so I stuck with 7.1.0 for that installation.
 
 NB: I probably could have chosen one of the other available gcc modules, so long as the gcc version was at least 4.7 (https://stackoverflow.com/questions/54363300/r-compilation-error-iso-c-forbids-in-class-initialization-of-non-const-stati).
+
+We need a few github-only packages.
+```r
+devtools::install_github('richfitz/remake')
+devtools::install_github('USGS-R/scipiper@task_combiners')
+devtools::install_github('mrc-ide/syncr')
+```
+
+We'll also need all the CRAN packages that remake needs. You can use `remake::install_missing_packages('remake.yml')`.
+
+## Googledrive authentication
+
+To build priority lakes objects in 1_format, we need to access data from Google Drive, which means we need...not sure yet. See issue #48.

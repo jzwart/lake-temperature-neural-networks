@@ -28,8 +28,9 @@ targets:
   # identify the best parameter set for each lake and use that to adjust the following
   # config info for final pretraining and training
 
-  train_config:
+  2_model/out/train_config.tsv:
     command: create_model_config(
+      out_file = target_name,
       phase = I('pretrain_train'),
       priority_lakes,
       pgdl_inputs_ind = '1_format/log/pgdl_inputs.ind',
@@ -38,4 +39,4 @@ targets:
   2_model/log/pgdl_outputs.ind:
     command: run_model_tasks(
       target_name,
-      train_config)
+      '2_model/out/train_config.tsv')
