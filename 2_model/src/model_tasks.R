@@ -2,11 +2,6 @@ run_model_tasks <- function(ind_file, model_config) {
   library(drake) # the transform option requires devtools::install_github('ropensci/drake') as of 3/27/19
   source('2_model/src/run_job.R') # calls run_job.py
 
-  plan_details <- model_config %>%
-    mutate(
-      id = sprintf('%s.%s', site_id, phase),
-      row = 1:n())
-
   model_plan <- drake_plan(
     fit = target(
       run_job(
@@ -20,7 +15,7 @@ run_model_tasks <- function(ind_file, model_config) {
         file_in('2_model/src/tf_train.py'),
         file_out(save_path) # the dir of the resulting model. drake says it handles whole directories, though I don't know how it behaves exactly
       ),
-      transform = map(.data = !!plan_details, .id = c(id))
+      transform = map(.data = !!model_config, .id = c(task_id))
     )
   )
   model_plan$resources <- list(list(
@@ -28,6 +23,8 @@ run_model_tasks <- function(ind_file, model_config) {
     ngpus = 1, # number of GPU cores per job. Bump this above 1 when not testing
     gpu.type = 'quadro', # quadro may be less busy; tesla is faster once running
     walltime = '10')) # runtime in minutes, in minutes:seconds, or in hours:minutes:seconds
+
+  print(model_plan)
 
   # Here's how to visualize the plan structure:
   # build_config <- drake_config(model_plan)

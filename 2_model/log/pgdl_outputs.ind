@@ -1,0 +1,26 @@
+2_model/tmp/nhd_1099476/pretrain/checkpoint: 9585ee649148f36f4a6c4e2e7fe27b7f
+2_model/tmp/nhd_1099476/pretrain/model.data-00000-of-00001: d93aa816dae96180b63992beabfdacfa
+2_model/tmp/nhd_1099476/pretrain/model.index: 391f3fb8eb64c120917516e638c46da6
+2_model/tmp/nhd_1099476/pretrain/model.meta: 2769fbd2d587d8a6bc71b6417786f544
+2_model/tmp/nhd_1099476/pretrain/preds.npy.npz: ec0270339f522b664fddcd8d235e6b15
+2_model/tmp/nhd_1099476/pretrain/preds.npz: dab6c3416a3a46d040622e5bca091e23
+2_model/tmp/nhd_1099476/pretrain/stats.npz: 6f0766703223cd920db805f3b11439c9
+2_model/tmp/nhd_1099476/train/checkpoint: 9585ee649148f36f4a6c4e2e7fe27b7f
+2_model/tmp/nhd_1099476/train/model.data-00000-of-00001: 3fb47b2474cb7c25a9cfdfb39b1083d0
+2_model/tmp/nhd_1099476/train/model.index: 1f5127c3c04f44e0bcceca6028f2fd7d
+2_model/tmp/nhd_1099476/train/model.meta: b8167a98b57f0f813e07f87cc3566260
+2_model/tmp/nhd_1099476/train/preds.npz: 73ecc51acc728a1c6201592bea189039
+2_model/tmp/nhd_1099476/train/stats.npz: 46f50537d3a5431427b183c2eb183aa2
+2_model/tmp/nhd_1099526/pretrain/checkpoint: 9585ee649148f36f4a6c4e2e7fe27b7f
+2_model/tmp/nhd_1099526/pretrain/model.data-00000-of-00001: cb2ab1924afd1db4235f898c2928bac4
+2_model/tmp/nhd_1099526/pretrain/model.index: cb1f62a72d0cec1fc4316ba6a14287cd
+2_model/tmp/nhd_1099526/pretrain/model.meta: ef087e85af4fc34ce49d87a3f4cd015f
+2_model/tmp/nhd_1099526/pretrain/preds.npz: f469e79f48a5b25dc8789675b16ea6b6
+2_model/tmp/nhd_1099526/pretrain/stats.npz: 91acb5e3a6ee9ab3d86237d28964c797
+2_model/tmp/nhd_1099526/train/checkpoint: 9585ee649148f36f4a6c4e2e7fe27b7f
+2_model/tmp/nhd_1099526/train/model.data-00000-of-00001: 9b6895c4d19ab2436133c637d639cd08
+2_model/tmp/nhd_1099526/train/model.index: b024a2b7158059202e0e140e61c3f37f
+2_model/tmp/nhd_1099526/train/model.meta: 20ac10f087035dd7d760bd0c6625dfa0
+2_model/tmp/nhd_1099526/train/preds.npz: 35bd655c1cdf3ad558660010fe5e5c86
+2_model/tmp/nhd_1099526/train/stats.npz: c62f216919976111f9fd6de09e59d3c7
+
