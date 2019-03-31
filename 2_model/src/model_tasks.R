@@ -1,7 +1,9 @@
 run_model_tasks <- function(ind_file, model_config) {
   library(drake) # the transform option requires devtools::install_github('ropensci/drake') as of 3/27/19
+  library(future.batchtools)
+  future::plan(batchtools_slurm, template = "slurm_batchtools.tmpl")
   source('2_model/src/run_job.R') # calls run_job.py
-
+  
   model_plan <- drake_plan(
     fit = target(
       run_job(
