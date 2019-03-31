@@ -5,7 +5,7 @@
 #'   reconstruct a complete prediction sequence without duplicates. The value
 #'   should always match the default for prep_pgdl_data_R() (and really should
 #'   be configured from on high for both that fun and this one)
-create_model_config <- function(phase=c('tune','pretrain_train'), priority_lakes, pgdl_inputs_ind, sequence_cfg) {
+create_model_config <- function(out_file, phase=c('tune','pretrain_train'), priority_lakes, pgdl_inputs_ind, sequence_cfg) {
 
   # define a template to set the column order and data types for the config file
   template <- tibble(
@@ -49,11 +49,10 @@ create_model_config <- function(phase=c('tune','pretrain_train'), priority_lakes
       ) %>% mutate(
         # define a task id we can use to name the drake targets and models. use
         # a hash in the name so that it's concise and yet won't change even if
-        # we change the config row order. use symbols because otherwise drake
-        # will quote with '.'s in the task names (ugly). use a similar naming
-        # scheme for saving the models
+        # we change the config row order. use a similar naming scheme for saving
+        # the models
         task_hash = sapply(1:n(), function(row) { digest::digest(select(., -save_path)[row,]) }),
-        task_id = rlang::syms(sprintf('%s.%s', site_id, task_hash)),
+        task_id = sprintf('%s.%s', site_id, task_hash),
         save_path = sprintf('2_model/tmp/%s/tune/%s', site_id, task_hash)
       ) %>%
         # attach site_id last so site_id remains a length-1 vector when
@@ -89,9 +88,8 @@ create_model_config <- function(phase=c('tune','pretrain_train'), priority_lakes
         # bind to the template to standardize the column order
         bind_rows(template, .)
     })) %>%
-      # attach suggestion for how to name the drake targets. use symbols because
-      # otherwise drake will quote with '.'s in the task names (ugly)
-      mutate(task_id = rlang::syms(sprintf('%s.%s', site_id, phase)))
+      # attach suggestion for how to name the drake targets
+      mutate(task_id = sprintf('%s.%s', site_id, phase))
   }
 
   # Attach attach information drake can use to extract one config row per target
@@ -103,5 +101,7 @@ create_model_config <- function(phase=c('tune','pretrain_train'), priority_lakes
   config <- config %>% # Augment the config table with the file hashes
     mutate(pgdl_inputs_md5 = pgdl_inputs_md5[data_file])
 
-  return(config)
+  # return(config)
+  if(!dir.exists(dirname(out_file))) dir.create(dirname(out_file))
+  readr::write_tsv(config, out_file)
 }
