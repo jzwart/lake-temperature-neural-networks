@@ -30,4 +30,4 @@ lib/cfg/user_settings.yml
 *.npy
 *checkpoint*
 2_model/src/__pycache__/
-2_model/src/mille/
+2_model/src/old_tf/mille/
