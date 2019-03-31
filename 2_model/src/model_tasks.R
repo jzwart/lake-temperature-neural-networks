@@ -1,9 +1,15 @@
-run_model_tasks <- function(ind_file, model_config) {
+run_model_tasks <- function(ind_file, model_config_file) {
   library(drake) # the transform option requires devtools::install_github('ropensci/drake') as of 3/27/19
   library(future.batchtools)
   future::plan(batchtools_slurm, template = "slurm_batchtools.tmpl")
   source('2_model/src/run_job.R') # calls run_job.py
-  
+
+  # Convert task_id from character to symbol because otherwise drake will quote
+  # with '.'s in the task names (which is ugly)
+  model_config <- readr::read_tsv(model_config_file, na='NA') %>%
+    mutate(task_id = rlang::syms(task_id))
+
+  # Create the drake task plan
   model_plan <- drake_plan(
     fit = target(
       run_job(
