@@ -47,9 +47,21 @@ create_model_config <- function(phase=c('tune','pretrain_train'), priority_lakes
       ) %>% bind_rows(
         template, .
       ) %>% mutate(
-        # use object hashes to name the models so that even if we change the order, the hash won't change
-        save_path = sprintf('2_model/tmp/%s/tune/t%s', site_id, sapply(1:n(), function(row) { digest::digest(select(., -save_path)[row,]) }))
-      )
+        # define a task id we can use to name the drake targets and models. use
+        # a hash in the name so that it's concise and yet won't change even if
+        # we change the config row order. use symbols because otherwise drake
+        # will quote with '.'s in the task names (ugly). use a similar naming
+        # scheme for saving the models
+        task_hash = sapply(1:n(), function(row) { digest::digest(select(., -save_path)[row,]) }),
+        task_id = rlang::syms(sprintf('%s.%s', site_id, task_hash)),
+        save_path = sprintf('2_model/tmp/%s/tune/%s', site_id, task_hash)
+      ) %>%
+        # attach site_id last so site_id remains a length-1 vector when
+        # computing data_file, restore_path, etc. (even though we have 2 tibble
+        # rows per site because phase is length 2)
+        mutate(site_id = site_id) %>%
+        # bind to the template to standardize the column order
+        bind_rows(template, .)
     }))
   } else if(phase == 'pretrain_train') {
     # config for pretrain and train
