@@ -46,10 +46,9 @@ def calculate_ec_loss(inputs, outputs, phys, depth_areas, n_depths, ec_threshold
         # Calculate absolute values of energy imbalances at each timestep
         diff_vec = tf.abs(lake_energy_deltas - lake_energy_fluxes)
 
-        # Mask dates with ice, for which we won't require energy conservation.
-        # The mask is a column in the phys matrix (a boolean, 0 for ice, 1 for non-ice)
+        # Mask dates with ice, for which we won't require energy conservation
         ice_col = phys_column_index('Ice', colnames_physics)
-        tmp_mask = 1-phys[start_index+1, 1:-1, ice_col]
+        tmp_mask = 1-phys[start_index+1, 1:-1, ice_col] # the ice column is a boolean (0 for ice, 1 for non-ice)
         tmp_loss = tf.reduce_mean(diff_vec * tf.cast(tmp_mask, tf.float32)) # apply the mask to diff_vec, then take mean
 
         # Add the energy imbalance for this set to the vector of imbalances
@@ -88,13 +87,17 @@ def calculate_lake_energy(temps, densities, n_depths, depth_areas):
     Returns:
         (n_days) Total lake energies (J)
     """
+    # Format depth_areas into a column tensor (m2)
+    depth_areas_col = tf.cast(tf.reshape(depth_areas[:,1], [n_depths, 1]), tf.float32)
+
+    # Compute energy in each layer for each timestep (result is in J)
     dz = 0.5 # thickness for each depth layer (m)
     cw = 4186 # specific heat of water (J/(kg degC))
+    energy_mat = tf.multiply(depth_areas_col, temps)*densities*dz*cw
 
-    # Total lake energy by timestep is sum of temps*densities*conversions
-    # over all layers in the depth profile at that timestep
-    areas = tf.reshape(depth_areas[:,1],[n_depths,1])
-    energy = tf.reduce_sum(tf.multiply(tf.cast(areas,tf.float32),temps)*densities*dz*cw,0)
+    # Total lake energy by timestep is sum of over all layers in the depth
+    # profile at that timestep
+    energy = tf.reduce_sum(energy_mat, 0)
     return energy
 
 def calculate_lake_energy_deltas(energies, surface_area):
@@ -136,7 +139,7 @@ def calculate_air_density(air_temp, rel_hum):
     # The following is equivalent to 0.348*(1+r)/(1+1.61*r)*p/Ta
     # where 100./c_gas = 0.348, 1./mwrw2a=1.61, and
     # Ta is air_temp in Kelvin = (air_temp + 273.15)
-    return 100.*(1.0/c_gas * (1 + r)/(1 + r/mwrw2a) * p/(air_temp + 273.15))
+    return 100. * (1.0/c_gas * (1 + r)/(1 + r/mwrw2a) * p/(air_temp + 273.15))
 
 def calculate_heat_flux_sensible(surf_temp, air_temp, rel_hum, wind_speed):
     """Calculate sensible heat flux
@@ -250,7 +253,8 @@ def calculate_energy_fluxes(phys, surf_temps, colnames_physics):
     """Calculate net energy influx to lake between each pair of adjacent time points
 
     Args:
-        phys (n_depths, n_days, n_physics): Physical data, where the variables arenamed in colnames_physics
+        phys (n_depths, n_days, n_physics): Physical data, where the variables
+            are named in colnames_physics
         surf_temps (n_depths, n_days): Temperatures at water surface
         colnames_physics (n_physics): numpy array of the column names for the feature dimension of the physics array
 
@@ -268,24 +272,24 @@ def calculate_energy_fluxes(phys, surf_temps, colnames_physics):
     R_lw_out_arr = e_s*sigma*(tf.pow(surf_temps[:]+273.15, 4))
     R_lw_out_arr = R_lw_out_arr[:-1] + (R_lw_out_arr[1:]-R_lw_out_arr[:-1])/2
 
-    t_s = surf_temps[:-1]
-    t_s2 = surf_temps[1:]
+    t_s1 = surf_temps[:-1]
+    t_s2 = surf_temps[1: ]
 
     air_temp_col = phys_column_index('AirTemp', colnames_physics)
-    air_temp = phys[:-1,air_temp_col]
-    air_temp2 = phys[1:,air_temp_col]
+    air_temp1 = phys[:-1,air_temp_col]
+    air_temp2 = phys[1: ,air_temp_col]
 
     rel_hum_col = phys_column_index('RelHum', colnames_physics)
-    rel_hum = phys[:-1,rel_hum_col]
-    rel_hum2 = phys[1:,rel_hum_col]
+    rel_hum1 = phys[:-1,rel_hum_col]
+    rel_hum2 = phys[1: ,rel_hum_col]
 
     wind_speed_col = phys_column_index('WindSpeed', colnames_physics)
-    ws = phys[:-1, wind_speed_col]
-    ws2 = phys[1:,wind_speed_col]
+    ws1 = phys[:-1, wind_speed_col]
+    ws2 = phys[1: ,wind_speed_col]
 
-    E1 = calculate_heat_flux_latent(t_s, air_temp, rel_hum, ws)
+    E1 = calculate_heat_flux_latent(t_s1, air_temp1, rel_hum1, ws1)
     E2 = calculate_heat_flux_latent(t_s2, air_temp2, rel_hum2, ws2)
-    H1 = calculate_heat_flux_sensible(t_s, air_temp, rel_hum, ws)
+    H1 = calculate_heat_flux_sensible(t_s1, air_temp1, rel_hum1, ws1)
     H2 = calculate_heat_flux_sensible(t_s2, air_temp2, rel_hum2, ws2)
     E = (E1 + E2)/2
     H = (H1 + H2)/2
@@ -294,6 +298,7 @@ def calculate_energy_fluxes(phys, surf_temps, colnames_physics):
     alpha_sw = 0.07 # shortwave albedo
     alpha_lw = 0.03 # longwave albedo
     fluxes = (R_sw_arr[:-1]*(1-alpha_sw) + R_lw_arr[:-1]*(1-alpha_lw) - R_lw_out_arr[:-1] + E[:-1] + H[:-1])
+
     return fluxes
 
 def phys_column_index(colname, colnames_physics):
