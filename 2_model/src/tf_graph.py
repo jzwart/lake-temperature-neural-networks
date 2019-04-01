@@ -88,7 +88,7 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
     unsup_phys_data = tf.placeholder("float", [None, n_steps, phy_size]) #tf.float32
     n_depths = depth_areas.shape[0]
 
-    unsup_loss,a,b,c = phy.calculate_ec_loss(
+    unsup_loss = phy.calculate_ec_loss(
         unsup_inputs,
         pred_u,
         unsup_phys_data,
