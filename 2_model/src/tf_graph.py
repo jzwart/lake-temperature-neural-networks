@@ -96,8 +96,7 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
         n_depths,
         ec_threshold,
         seq_per_batch,
-        colnames_physics,
-        combine_days=1)
+        colnames_physics)
 
     # Compute total costs
     cost = r_cost + elam*unsup_loss#+plam*plos+plam*plos_u.
