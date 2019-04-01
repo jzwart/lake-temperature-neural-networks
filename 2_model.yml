@@ -40,4 +40,6 @@ targets:
     command: run_model_tasks(
       target_name,
       '2_model/out/train_config.tsv')
-  # to test without yeti: run_model_tasks('2_model/log/pgdl_outputs.ind', '2_model/out/train_config.tsv', 'pc')
+  # to test without yeti:
+  # source('2_model/src/model_tasks.R')
+  # run_model_tasks('2_model/log/pgdl_outputs.ind', '2_model/out/train_config.tsv', 'pc')
