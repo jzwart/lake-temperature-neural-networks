@@ -48,3 +48,12 @@ We'll also need all the CRAN packages that remake needs. You can use `remake::in
 ## Googledrive authentication
 
 To build priority lakes objects in 1_format, we need to access data from Google Drive, which means we need...not sure yet. See issue #48.
+
+## Without Googledrive authentication
+
+While we're still sorting out issue #48, we should still be able to run the drake plan with:
+
+```r
+source('2_model/src/model_tasks.R')
+run_model_tasks('2_model/log/pgdl_outputs.ind', '2_model/out/train_config.tsv')
+```

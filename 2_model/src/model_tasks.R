@@ -1,10 +1,15 @@
-run_model_tasks <- function(ind_file, model_config_file) {
+run_model_tasks <- function(ind_file, model_config_file, computer=c('slurm','pc')) {
+  computer <- match.arg(computer)
+
   library(drake) # the transform option requires devtools::install_github('ropensci/drake') as of 3/27/19
-  library(future.batchtools)
-  future::plan(batchtools_slurm, template = "2_model/src/slurm_batchtools.tmpl")
   source('2_model/src/run_job.R') # calls run_job.py
   library(dplyr)
   library(scipiper)
+
+  if(computer == 'slurm') {
+    library(future.batchtools)
+    future::plan(batchtools_slurm, template = "2_model/src/slurm_batchtools.tmpl")
+  }
 
   # Convert task_id from character to symbol because otherwise drake will quote
   # with '.'s in the task names (which is ugly)
@@ -44,7 +49,11 @@ run_model_tasks <- function(ind_file, model_config_file) {
   # vis_drake_graph(build_config)
 
   # Actually run the plan
-  drake::make(model_plan, parallelism='future', jobs=nrow(model_plan))
+  if(computer == 'slurm') {
+    drake::make(model_plan, parallelism='future', jobs=nrow(model_plan))
+  } else {
+    drake::make(model_plan)
+  }
 
   # If there are no remaining tasks, construct an indicator file to satisfy remake/scipiper
   plan_config <- drake_config(model_plan)
