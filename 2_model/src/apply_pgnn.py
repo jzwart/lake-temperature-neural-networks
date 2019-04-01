@@ -17,16 +17,16 @@ import tf_train
 def apply_pgnn(
         phase = 'pretrain',
         learning_rate = 0.005,
-        state_size = 14, # Step 1: try number of input drivers, and half and twice that number
+        state_size = 8, # Step 1: try number of input drivers, and half and twice that number
         ec_threshold = 24, # TODO: calculate for each lake: take GLM temperatures, calculate error between lake energy and the fluxes, take the maximum as the threshold. Can tune from there, but it usually doesn’t change much from the maximum
         plam = 0.15, # TODO: implement depth-density constraint in model
         elam = 0.025, # original mille lacs values were 0.0005, 0.00025
         data_file = '1_format/tmp/pgdl_inputs/nhd_1099476.npz',
         sequence_offset = 100,
         max_batch_obs = 50000,
-        n_epochs = 5, # 200 is usually more than enough
+        n_epochs = 2, # 200 is usually more than enough
         min_epochs_test = 0,
-        min_epochs_save = 5, # later is recommended (runs quickest if ==n_epochs)
+        min_epochs_save = 2, # later is recommended (runs quickest if ==n_epochs)
         restore_path = '', #'2_model/out/EC_mille/pretrain',
         save_path = '2_model/tmp/nhd_1099476/pretrain'
         # TODO: should have L1 and L2 norm weights in this list, implemented in tf_graph
