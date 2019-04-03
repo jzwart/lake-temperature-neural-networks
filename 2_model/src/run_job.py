@@ -14,8 +14,9 @@ parser.add_argument('--phase')
 parser.add_argument('--learning_rate')
 parser.add_argument('--state_size')
 parser.add_argument('--ec_threshold')
-parser.add_argument('--plam')
-parser.add_argument('--elam')
+parser.add_argument('--dd_lambda')
+parser.add_argument('--ec_lambda')
+parser.add_argument('--l1_lambda')
 parser.add_argument('--data_file')
 parser.add_argument('--sequence_offset')
 parser.add_argument('--max_batch_obs')
@@ -34,8 +35,9 @@ apply_pgnn.apply_pgnn(
         learning_rate = float(args.learning_rate),
         state_size = int(args.state_size),
         ec_threshold = float(args.ec_threshold),
-        plam = float(args.plam),
-        elam = float(args.elam),
+        dd_lambda = float(args.dd_lambda),
+        ec_lambda = float(args.ec_lambda),
+        l1_lambda = float(args.l1_lambda),
         data_file = args.data_file,
         sequence_offset = int(args.sequence_offset),
         max_batch_obs = int(args.max_batch_obs),

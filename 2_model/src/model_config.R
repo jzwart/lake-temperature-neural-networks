@@ -13,8 +13,9 @@ create_model_config <- function(out_file, phase=c('tune','pretrain_train'), prio
     learning_rate = 0,
     state_size = 0,
     ec_threshold = 0,
-    plam = 0,
-    elam = 0,
+    dd_lambda = 0,
+    ec_lambda = 0,
+    l1_lambda = 0,
     data_file = '',
     sequence_offset = 0,
     max_batch_obs = 0,
@@ -30,13 +31,14 @@ create_model_config <- function(out_file, phase=c('tune','pretrain_train'), prio
     # config for tuning (not yet tested or well thought through)
     config <- bind_rows(lapply(priority_lakes$site_id, function(site_id) {
       crossing(
-        state_size=c(8,12,16),
-        elam=c(0.02, 0.01, 0.05)
+        state_size = c(8,12,16),
+        ec_lambda = c(0.02, 0.01, 0.05)
       ) %>% mutate(
         phase = 'tune',
         learning_rate = 0.005,
         ec_threshold = 24,
-        plam = 0.15,
+        dd_lambda = 0, # 0.15 might be good if we actually had a depth-density constraint
+        l1_lambda = 0.1,
         data_file = sprintf('1_format/tmp/pgdl_inputs/%s.npz', site_id),
         sequence_offset = sequence_cfg$sequence_offset,
         max_batch_obs = 50000, # my computer can handle about 50000 for state_size=14, about 100000 for state_size=8
@@ -70,8 +72,8 @@ create_model_config <- function(out_file, phase=c('tune','pretrain_train'), prio
         learning_rate = c(0.008, 0.005),
         state_size = 12,
         ec_threshold = 24,
-        plam = 0.15,
-        elam = 0.025,
+        dd_lambda = 0, # 0.15 might be good if we actually had a depth-density constraint
+        ec_lambda = 0.025,
         data_file = sprintf('1_format/tmp/pgdl_inputs/%s.npz', site_id),
         sequence_offset = sequence_cfg$sequence_offset,
         max_batch_obs = 50000, # my computer can handle 50000 for state_size=14, 100000 for state_size=8
