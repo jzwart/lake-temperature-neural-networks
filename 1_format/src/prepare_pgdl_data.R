@@ -82,7 +82,7 @@ tidy_pgdl_data <- function(
       new_deepest <- min(missing_at_disallowed_depth$depth)
       message(sprintf(
         '%s: %d missing GLM predictions above the deepest depth (%0.1fm) at %s m;\ntruncating to end at %0.1f',
-        lake_id, nrow(missing_at_disallowed_depth), max(depths),
+        lake_id, nrow(missing_at_disallowed_depth), max(glm_preds$depth),
         paste0(sprintf('%0.1f', sort(unique(missing_at_disallowed_depth$depth))), collapse=', '),
         new_deepest))
       glm_preds <- glm_preds %>%
@@ -113,6 +113,11 @@ tidy_pgdl_data <- function(
   # make the data prep a heck of a lot simpler and reduces the time required for
   # prediction.
   obs <- obs %>%
+    # take care of some duplicated depth-date combos
+    group_by(date, depth) %>%
+    summarize(temp = mean(temp)) %>%
+    ungroup() %>%
+    # interpolate
     group_by(date) %>%
     do({
       date_df <- .
@@ -141,7 +146,11 @@ tidy_pgdl_data <- function(
     # to see my work as columns, print out the result up to this point, e.g. by uncommenting
     # tail(20) %>% print(n=20)
     # now we clean up the columns
-    select(date, depth=new_depth, temp=new_temp)
+    select(date, depth=new_depth, temp=new_temp) %>%
+    # take care of some duplicated depth-date combos
+    group_by(date, depth) %>%
+    summarize(temp = mean(temp)) %>%
+    ungroup()
 
   #### Munge the lake geometry ####
 

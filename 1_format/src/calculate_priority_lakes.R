@@ -50,7 +50,19 @@ combine_priorities <- function(priority_lakes_by_choice, priority_lakes_by_data,
 
   # but during pipeline development, just use two lakes
   if(truncate_lakes_for_dev) {
-    all_lakes <- c("nhd_1099476", "nhd_1099526")
+    all_lakes <- c(
+      'nhd_10596466', 'nhd_1097324', 'nhd_1099052', 'nhd_1099136', 'nhd_1099172', 'nhd_1099240',
+      'nhd_1099282', 'nhd_1099420', 'nhd_1099430', 'nhd_1099432', 'nhd_1099450', 'nhd_1099476',
+      'nhd_1099526', 'nhd_1100962', 'nhd_1101504', 'nhd_1101506', 'nhd_1101544', 'nhd_1101590',
+      'nhd_1101616', 'nhd_1101636', 'nhd_1101684', 'nhd_1101754', 'nhd_1101778', 'nhd_1101812',
+      'nhd_1101864', 'nhd_1101938', 'nhd_1101942', 'nhd_1102086', 'nhd_1102088', 'nhd_1102284',
+      'nhd_1102366', 'nhd_120051922', 'nhd_120052022', 'nhd_120052233', 'nhd_120052351',
+      'nhd_120052587', 'nhd_120053694', 'nhd_12160852', 'nhd_12162854', 'nhd_13290898',
+      'nhd_13293262', 'nhd_13294464', 'nhd_13294928', 'nhd_13343906', 'nhd_13344056', 'nhd_13344170',
+      'nhd_13344210', 'nhd_13344284', 'nhd_13393533', 'nhd_13393567', 'nhd_13631637', 'nhd_14783883',
+      'nhd_2349188', 'nhd_2349198', 'nhd_2353946', 'nhd_2384584', 'nhd_2384766', 'nhd_2385444',
+      'nhd_2385496', 'nhd_2385648', 'nhd_2647582', 'nhd_2648034', 'nhd_2723765', 'nhd_2723803',
+      'nhd_2723871', 'nhd_4250586', 'nhd_4250588', 'nhd_9022741')
   }
 
   # give warning if the selected lakes don't meet the priority_lakes_by_data criteria
