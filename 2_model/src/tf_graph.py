@@ -8,7 +8,7 @@ Created on Fri Dec  7 18:05:09 2018
 import tensorflow as tf
 import physics as phy
 
-def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, depth_areas, ec_threshold, plam, elam, seq_per_batch, learning_rate):
+def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, depth_areas, ec_threshold, dd_lambda, ec_lambda, l1_lambda, seq_per_batch, learning_rate):
     """Builds a tensorflow graph for the PRGNN model
 
     Args:
@@ -20,6 +20,7 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
         ec_threshold: Tolerance for energy imbalance before any penalization occurs
         dd_lambda: Depth-density penalty lambda, a hyperparameter that needs manual tuning. PRESENTLY IGNORED (no physics constraint)
         ec_lambda: Energy-conservation penalty lambda, another hyperparameter that needs manual tuning. Could set ec_lambda=0 if we wanted RNN only, no EC component
+        l1_lambda: L1-regularization penalty lambda, another hyperparameter that needs manual tuning
         seq_per_batch: Number of sections to arrange vertically within the input for a batch (after splitting into windows of width n_steps)
         learning_rate: Learning rate
     """

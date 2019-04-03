@@ -11,6 +11,7 @@ run_job <- function(config, ...) {
       '--ec_threshold=%0.2f' = ec_threshold,
       '--dd_lambda=%0.6f' = dd_lambda,
       '--ec_lambda=%0.6f' = ec_lambda,
+      '--l1_lambda=%0.6f' = l1_lambda,
       '--data_file="%s"' = data_file,
       '--sequence_offset=%d' = sequence_offset,
       '--max_batch_obs=%d' = max_batch_obs,
