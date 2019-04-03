@@ -19,8 +19,8 @@ def apply_pgnn(
         learning_rate = 0.005,
         state_size = 8, # Step 1: try number of input drivers, and half and twice that number
         ec_threshold = 24, # TODO: calculate for each lake: take GLM temperatures, calculate error between lake energy and the fluxes, take the maximum as the threshold. Can tune from there, but it usually doesn’t change much from the maximum
-        plam = 0.15, # TODO: implement depth-density constraint in model
-        elam = 0.025, # original mille lacs values were 0.0005, 0.00025
+        dd_lambda = 0.15, # TODO: implement depth-density constraint in model
+        ec_lambda = 0.025, # original mille lacs values were 0.0005, 0.00025
         data_file = '1_format/tmp/pgdl_inputs/nhd_1099476.npz',
         sequence_offset = 100,
         max_batch_obs = 50000,
@@ -37,8 +37,8 @@ def apply_pgnn(
         learning_rate: NN learning rate
         state_size: Number of units in each cell's hidden state
         ec_threshold: Energy imbalance beyond which NN will be penalized
-        plam: PRESENTLY IGNORED. physics (depth-density) constraint lambda, multiplier to physics loss when adding to other losses
-        elam: energy constraint lambda, multiplier to energy balance loss when adding to other losses
+        dd_lambda: PRESENTLY IGNORED. Depth-density penalty lambda, a hyperparameter that needs manual tuning. Multiplier to depth-density loss when adding to other losses.
+        ec_lambda: Energy-conservation penalty lambda, another hyperparameter that needs manual tuning. Multiplier to energy-conservation loss when adding to other losses. Could set ec_lambda=0 if we wanted RNN only, no EC component
         data_file: Filepath for the one file per lake that contains all the data.
         sequence_offset: Number of observations by which each data sequence in inputs['predict.features'] is offset from the previous sequence. Used to reconstruct a complete prediction sequence without duplicates.
         max_batch_obs: Upper limit on number of individual temperature predictions (date-depth-split combos) per batch. True batch size will be computed as the largest number of completes sequences for complete depth profiles that fit within this max_batch_size.
@@ -67,7 +67,7 @@ def apply_pgnn(
     train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data = tf_graph.build_tf_graph(
             inputs['train.labels'].shape[1], inputs['train.features'].shape[2], state_size,
             inputs['unsup.physics'].shape[2], inputs['colnames.physics'], inputs['geometry'],
-            ec_threshold, plam, elam, seq_per_batch, learning_rate)
+            ec_threshold, dd_lambda, ec_lambda, seq_per_batch, learning_rate)
 
     # %% Train model
     print('Training model...')

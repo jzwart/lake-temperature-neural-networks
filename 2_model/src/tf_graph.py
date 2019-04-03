@@ -18,8 +18,8 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
         phy_size: Number of features in the input data (drivers) used for UNsupervised learning. These data should be unnormalized.
         colnames_physics: Numpy array of the column names for the feature dimension of the physics array
         ec_threshold: Tolerance for energy imbalance before any penalization occurs
-        plam: Physics constraint lambda, a hyperparameter that needs manual tuning. PRESENTLY IGNORED (no physics constraint)
-        elam: Energy constraint lambda, another hyperparameter that needs manual tuning. Could set elam=0 if we wanted RNN only, no EC component
+        dd_lambda: Depth-density penalty lambda, a hyperparameter that needs manual tuning. PRESENTLY IGNORED (no physics constraint)
+        ec_lambda: Energy-conservation penalty lambda, another hyperparameter that needs manual tuning. Could set ec_lambda=0 if we wanted RNN only, no EC component
         seq_per_batch: Number of sections to arrange vertically within the input for a batch (after splitting into windows of width n_steps)
         learning_rate: Learning rate
     """
@@ -99,7 +99,7 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
         colnames_physics)
 
     # Compute total costs
-    cost = r_cost + elam*unsup_loss#+plam*plos+plam*plos_u.
+    cost = r_cost + ec_lambda*unsup_loss + l1_lambda*l1_loss #+dd_lambda*dd_loss+dd_lambda*dd_loss_unsup.
 
     # Define the gradients and optimizer
     tvars = tf.trainable_variables()
