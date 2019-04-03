@@ -19,8 +19,9 @@ def apply_pgnn(
         learning_rate = 0.005,
         state_size = 8, # Step 1: try number of input drivers, and half and twice that number
         ec_threshold = 24, # TODO: calculate for each lake: take GLM temperatures, calculate error between lake energy and the fluxes, take the maximum as the threshold. Can tune from there, but it usually doesn’t change much from the maximum
-        dd_lambda = 0.15, # TODO: implement depth-density constraint in model
+        dd_lambda = 0, # TODO: implement depth-density constraint in model
         ec_lambda = 0.025, # original mille lacs values were 0.0005, 0.00025
+        l1_lambda = 0.05,
         data_file = '1_format/tmp/pgdl_inputs/nhd_1099476.npz',
         sequence_offset = 100,
         max_batch_obs = 50000,
@@ -39,6 +40,7 @@ def apply_pgnn(
         ec_threshold: Energy imbalance beyond which NN will be penalized
         dd_lambda: PRESENTLY IGNORED. Depth-density penalty lambda, a hyperparameter that needs manual tuning. Multiplier to depth-density loss when adding to other losses.
         ec_lambda: Energy-conservation penalty lambda, another hyperparameter that needs manual tuning. Multiplier to energy-conservation loss when adding to other losses. Could set ec_lambda=0 if we wanted RNN only, no EC component
+        l1_lambda: L1-regularization penalty lambda, another hyperparameter that needs manual tuning
         data_file: Filepath for the one file per lake that contains all the data.
         sequence_offset: Number of observations by which each data sequence in inputs['predict.features'] is offset from the previous sequence. Used to reconstruct a complete prediction sequence without duplicates.
         max_batch_obs: Upper limit on number of individual temperature predictions (date-depth-split combos) per batch. True batch size will be computed as the largest number of completes sequences for complete depth profiles that fit within this max_batch_size.
@@ -64,10 +66,10 @@ def apply_pgnn(
 
     # %% Build graph
     print('Building graph...')
-    train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data = tf_graph.build_tf_graph(
+    train_op, total_loss, rmse_loss, ec_loss, l1_loss, pred, x, y, m, unsup_inputs, unsup_phys_data = tf_graph.build_tf_graph(
             inputs['train.labels'].shape[1], inputs['train.features'].shape[2], state_size,
             inputs['unsup.physics'].shape[2], inputs['colnames.physics'], inputs['geometry'],
-            ec_threshold, dd_lambda, ec_lambda, seq_per_batch, learning_rate)
+            ec_threshold, dd_lambda, ec_lambda, l1_lambda, seq_per_batch, learning_rate)
 
     # %% Train model
     print('Training model...')
@@ -98,8 +100,8 @@ def apply_pgnn(
     else:
         print("Error: unrecognized phase '%s'"% phase)
 
-    train_stats, test_loss_RMSE, preds = tf_train.train_tf_graph(
-            train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data,
+    train_stats, test_loss_rmse, preds = tf_train.train_tf_graph(
+            train_op, total_loss, rmse_loss, ec_loss, l1_loss, pred, x, y, m, unsup_inputs, unsup_phys_data,
             x_train, y_train, m_train, x_unsup, p_unsup, x_test, y_test, m_test, x_pred,
             sequence_offset=sequence_offset, seq_per_batch=seq_per_batch, n_epochs=n_epochs, min_epochs_test=min_epochs_test, min_epochs_save=min_epochs_save,
             restore_path=restore_path, save_path=save_path)
@@ -110,11 +112,11 @@ def apply_pgnn(
 
     # Save the model diagnostics
     stat_save_file = '%s/stats.npz' % save_path
-    np.savez_compressed(stat_save_file, train_stats=train_stats, test_loss_RMSE=test_loss_RMSE,
+    np.savez_compressed(stat_save_file, train_stats=train_stats, test_loss_rmse=test_loss_rmse,
                         start_time=start_time, end_time=end_time, run_time=run_time)
     print("  Diagnostics saved to %s" % stat_save_file)
 
-    return(train_stats, test_loss_RMSE, preds)
+    return(train_stats, test_loss_rmse, preds)
     # %% Inspect predictions
 
     # prd has dimensions [depths*batches, n timesteps per batch, 1]

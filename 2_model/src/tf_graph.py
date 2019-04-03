@@ -8,7 +8,10 @@ Created on Fri Dec  7 18:05:09 2018
 import tensorflow as tf
 import physics as phy
 
-def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, depth_areas, ec_threshold, dd_lambda, ec_lambda, l1_lambda, seq_per_batch, learning_rate):
+def build_tf_graph(
+        n_steps, input_size, state_size,
+        phy_size, colnames_physics, depth_areas,
+        ec_threshold, dd_lambda, ec_lambda, l1_lambda, seq_per_batch, learning_rate):
     """Builds a tensorflow graph for the PRGNN model
 
     Args:
@@ -41,16 +44,17 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
 
     # Output layer
     n_classes = 1 # Number of output values (probably 1 for a single depth-specific, time-specific prediction)
-    w_fin = tf.get_variable('w_fin',[state_size, n_classes], tf.float32,
-                                     tf.random_normal_initializer(stddev=0.02))
-    b_fin = tf.get_variable('b_fin',[n_classes],  tf.float32,
-                                     initializer=tf.constant_initializer(0.0))
+    with tf.variable_scope('output'):
+        output_weights = tf.get_variable('weights', [state_size, n_classes], tf.float32,
+                                         initializer=tf.random_normal_initializer(stddev=0.02))
+        output_bias = tf.get_variable('bias', [n_classes], tf.float32,
+                                      initializer=tf.constant_initializer(0.0))
 
-    # Define how LSTM and final layers are connected to make predictions
+    # Define how LSTM and output layer are connected to make predictions
     pred=[]
     for i in range(n_steps):
         tp1 = state_series_x[:,i,:] #state_series_x dimensions are [n depths, n timesteps, n hidden units]
-        pt = tf.matmul(tp1,w_fin)+b_fin
+        pt = tf.matmul(tp1, output_weights) + output_bias
         pred.append(pt) # can't do pred[i] = pt because tensorflow wouldn't like it
 
     pred = tf.stack(pred,axis=1) # converts the preds list to a tensorflow array. [n depths, n timesteps, 1] (the last dimension isn'd really needed; we'll remove it later)
@@ -62,7 +66,7 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
     # so we're only looking at predictions with corresponding observations available
     num_y_s = tf.cast(tf.count_nonzero(~tf.is_nan(y_s)), tf.float32)
     zero_or_error = tf.where(tf.is_nan(y_s), tf.zeros_like(y_s), pred_s - y_s)
-    r_cost = tf.sqrt(tf.reduce_sum(tf.square(zero_or_error)) / num_y_s)
+    rmse_loss = tf.sqrt(tf.reduce_sum(tf.square(zero_or_error)) / num_y_s)
     # the only other cost function we might reasonably consider besides RMSE might be MAE...but they're quite similar
 
     ### EC penalization (using unsupervised learning, which allows us to use a larger dataset than the above supervised learning can
@@ -79,7 +83,7 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
     pred_u=[] # same as above for the supervised part
     for i in range(n_steps):
         tp2 = state_series_xu[:,i,:] # state_series_xu is the state series from the unsupervised input
-        pt2 = tf.matmul(tp2,w_fin)+b_fin
+        pt2 = tf.matmul(tp2, output_weights) + output_bias
         pred_u.append(pt2)
 
     pred_u = tf.stack(pred_u,axis=1)
@@ -89,7 +93,7 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
     unsup_phys_data = tf.placeholder("float", [None, n_steps, phy_size]) #tf.float32
     n_depths = depth_areas.shape[0]
 
-    unsup_loss = phy.calculate_ec_loss(
+    ec_loss = phy.calculate_ec_loss(
         unsup_inputs,
         pred_u,
         unsup_phys_data,
@@ -99,13 +103,19 @@ def build_tf_graph(n_steps, input_size, state_size, phy_size, colnames_physics, 
         seq_per_batch,
         colnames_physics)
 
-    # Compute total costs
-    cost = r_cost + ec_lambda*unsup_loss + l1_lambda*l1_loss #+dd_lambda*dd_loss+dd_lambda*dd_loss_unsup.
+    # Regularization loss
+    # select and compute L1 loss on the trainable weights. L1 because Jared has found it's better than L2,
+    # and weights not biases because it's often counterproductive to regularize weights
+    regularizable_variables = [tf.reshape(tf_var, [-1]) for tf_var in tf.trainable_variables() if not ('bias' in tf_var.name)]
+    l1_loss = tf.reduce_sum(tf.abs(tf.concat(regularizable_variables, axis=0)))
+
+    # Compute total costs as weighted sum of the cost components
+    total_loss = rmse_loss + ec_lambda*ec_loss + l1_lambda*l1_loss # dd_lambda*(dd_loss + dd_loss_unsup)
 
     # Define the gradients and optimizer
     tvars = tf.trainable_variables()
-    grads = tf.gradients(cost, tvars)
+    grads = tf.gradients(total_loss, tvars)
     optimizer = tf.train.AdamOptimizer(learning_rate)
     train_op = optimizer.apply_gradients(zip(grads, tvars))
 
-    return(train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data)
+    return(train_op, total_loss, rmse_loss, ec_loss, l1_loss, pred, x, y, m, unsup_inputs, unsup_phys_data)

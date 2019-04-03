@@ -10,14 +10,14 @@ import numpy as np
 import tensorflow as tf
 
 def train_tf_graph(
-        train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data,
+        train_op, total_loss, rmse_loss, ec_loss, l1_loss, pred, x, y, m, unsup_inputs, unsup_phys_data,
         x_train, y_train, m_train, x_unsup, p_unsup, x_test, y_test, m_test, x_pred,
         sequence_offset, seq_per_batch, n_epochs=300, min_epochs_test=0, min_epochs_save=300,
         restore_path='', save_path='./out/EC_mille/pretrain'):
     """Trains a tensorflow graph for the PRGNN model
 
     Args:
-        train_op, cost, r_cost, pred, unsup_loss, x, y, m, unsup_inputs, unsup_phys_data: tf tensors
+        train_op, rmse_loss, ec_loss, l1_loss, pred, x, y, m, unsup_inputs, unsup_phys_data: tf tensors
         x_train: Input data for supervised learning
         y_train: Observations for supervised learning
         m_train: Observation mask for supervised learning
@@ -60,9 +60,9 @@ def train_tf_graph(
     saver = tf.train.Saver(max_to_keep=1) # tells tf to prepare to save the graph we've defined so far
 
     # Initialize arrays to hold the training progress information
-    train_stat_names = ('loss_total', 'loss_RMSE', 'loss_DD', 'loss_EC')
+    train_stat_names = ('loss_total', 'loss_RMSE', 'loss_EC', 'loss_L1') # 'loss_DD',
     train_stats = np.full((n_epochs, batches_per_epoch, len(train_stat_names)), np.nan, dtype=np.float64)
-    test_loss_RMSE = np.full((n_epochs), np.nan, dtype=np.float64)
+    test_loss_rmse = np.full((n_epochs), np.nan, dtype=np.float64)
 
     with tf.Session() as sess:
 
@@ -117,11 +117,11 @@ def train_tf_graph(
                 p_unsup_batch = p_unsup_seqs.reshape((p_unsup.shape[0]*seq_per_batch, p_unsup.shape[1], p_unsup.shape[2]))
 
                 # Train on training set, including both supervised and unsupervised data
-                _, loss, rc, ec = sess.run( # this is where you feed in data and get output from the graph
+                _, loss_total, loss_rmse, loss_ec, loss_l1 = sess.run( # this is where you feed in data and get output from the graph
                         # tell sess.run which tensorflow variables to update during each epoch.
                         # train_op is important because that contains the gradients for all the costs and variables.
                         # all others are optional to track here.
-                        [train_op, cost, r_cost, unsup_loss],
+                        [train_op, total_loss, rmse_loss, ec_loss, l1_loss],
                         # define the inputs to the function
                         feed_dict = {
                                 x: x_train_batch,
@@ -132,29 +132,30 @@ def train_tf_graph(
                 })
 
                 # Store stats
-                train_stats[epoch, batch, :] = [loss, rc, np.nan, ec]
+                train_stats[epoch, batch, :] = [loss_total, loss_rmse, loss_ec, loss_l1]
 
                 # Report training losses
                 print(
                     "Epoch " + str(epoch) \
                     + ", batch " + str(batch) \
-                    + ": loss_train " + "{:.4f}".format(loss) \
-                    + ", loss_RMSE " + "{:.4f}".format(rc) \
-                    + ", loss_EC " + "{:.4f}".format(ec))
+                    + " training losses: Total " + "{:.4f}".format(loss_total) \
+                    + ", RMSE " + "{:.4f}".format(loss_rmse) \
+                    + ", EC " + "{:.4f}".format(loss_ec) \
+                    + ", L1 " + "{:.4f}".format(loss_l1))
 
             # Calculate, store, and report RMSE-only loss for test set if & when requested
             if epoch >= min_epochs_test - 1:
-                test_loss_RMSE[epoch] = sess.run(
+                test_loss_rmse[epoch] = sess.run(
                         # note that this first arg doesn't include train_op, so we're not updating the model
                         # now that we're applying to the test set
-                        r_cost,
+                        rmse_loss,
                         feed_dict = {
                                 x: x_test_reshaped,
                                 y: y_test_reshaped,
                                 m: m_test_reshaped
                 })
                 print(
-                    "  Test RMSE: {:.4f}".format(test_loss_RMSE[epoch]))
+                    "  Test RMSE: {:.4f}".format(test_loss_rmse[epoch]))
 
             # Save the model state if & when requested
             if epoch >= min_epochs_save - 1:
@@ -178,4 +179,4 @@ def train_tf_graph(
                 np.savez_compressed(pred_save_file, preds_raw=preds_raw, preds_best=preds_best)
                 print("  Predictions saved to %s" % pred_save_file)
 
-    return(train_stats, test_loss_RMSE, preds_best)
+    return(train_stats, test_loss_rmse, preds_best)
