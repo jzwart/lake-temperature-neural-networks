@@ -1,0 +1,7 @@
+phase	learning_rate	state_size	ec_threshold	dd_lambda	ec_lambda	l1_lambda	data_file	sequence_offset	max_batch_obs	n_epochs	min_epochs_test	min_epochs_save	restore_path	save_path	site_id	task_id	pgdl_inputs_md5	row
+tune	0.005	8	24	0	0.04	0.005	1_format/tmp/pgdl_inputs/nhd_10596466.npz	100	50000	100	0	100		2_model/tmp/nhd_10596466/tune/0aa278026d237d56a2d5115dae7c0c69	nhd_10596466	nhd_10596466.0aa278026d237d56a2d5115dae7c0c69	NA	1
+tune	0.005	8	24	0	0.04	0.02	1_format/tmp/pgdl_inputs/nhd_10596466.npz	100	50000	100	0	100		2_model/tmp/nhd_10596466/tune/0b96017677ac9a535ff08caff7c34761	nhd_10596466	nhd_10596466.0b96017677ac9a535ff08caff7c34761	NA	2
+tune	0.005	8	24	0	0.04	0.1	1_format/tmp/pgdl_inputs/nhd_10596466.npz	100	50000	100	0	100		2_model/tmp/nhd_10596466/tune/4188268ca08f3d82a96ad2019c618433	nhd_10596466	nhd_10596466.4188268ca08f3d82a96ad2019c618433	NA	3
+tune	0.005	16	24	0	0.04	0.005	1_format/tmp/pgdl_inputs/nhd_10596466.npz	100	50000	100	0	100		2_model/tmp/nhd_10596466/tune/f6e9655d6c97d8d596d5ee1a14489dc7	nhd_10596466	nhd_10596466.f6e9655d6c97d8d596d5ee1a14489dc7	NA	4
+tune	0.005	16	24	0	0.04	0.02	1_format/tmp/pgdl_inputs/nhd_10596466.npz	100	50000	100	0	100		2_model/tmp/nhd_10596466/tune/fab6eb57e974282ee20485d7929eb210	nhd_10596466	nhd_10596466.fab6eb57e974282ee20485d7929eb210	NA	5
+tune	0.005	16	24	0	0.04	0.1	1_format/tmp/pgdl_inputs/nhd_10596466.npz	100	50000	100	0	100		2_model/tmp/nhd_10596466/tune/96dde474204d777cba6705149e5be9a2	nhd_10596466	nhd_10596466.96dde474204d777cba6705149e5be9a2	NA	6

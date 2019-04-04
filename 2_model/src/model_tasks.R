@@ -1,4 +1,4 @@
-run_model_tasks <- function(ind_file, model_config_file, computer=c('slurm','pc')) {
+run_model_tasks <- function(ind_file, model_config_file, computer=c('slurm', 'pc')) {
   computer <- match.arg(computer)
 
   library(drake) # the transform option requires devtools::install_github('ropensci/drake') as of 3/27/19
@@ -13,7 +13,16 @@ run_model_tasks <- function(ind_file, model_config_file, computer=c('slurm','pc'
 
   # Convert task_id from character to symbol because otherwise drake will quote
   # with '.'s in the task names (which is ugly)
-  model_config <- readr::read_tsv(model_config_file, na='NA', col_types='cdddddcdddddccccdc') %>%
+  model_config <- readr::read_tsv(model_config_file, na='NA', col_types=cols(
+    .default = col_double(),
+    phase = col_character(),
+    data_file = col_character(),
+    restore_path = col_character(),
+    save_path = col_character(),
+    task_id = col_character(),
+    site_id = col_character(),
+    pgdl_inputs_md5 = col_character()
+  )) %>%
     mutate(task_id = rlang::syms(task_id))
 
   # Create the drake task plan
@@ -60,7 +69,11 @@ run_model_tasks <- function(ind_file, model_config_file, computer=c('slurm','pc'
   remaining_tasks <- drake::outdated(plan_config)
   if(length(remaining_tasks) == 0) {
     saved_files <- unlist(lapply(model_config$save_path, dir, full.names=TRUE))
-    sc_indicate(ind_file = ind_file, data_file = saved_files)
+    if(!is.na(ind_file)) {
+      sc_indicate(ind_file = ind_file, data_file = saved_files)
+    } else {
+      message("All models are complete, but not writing indicator because ind_file=NA")
+    }
   } else {
     stop(sprintf("We may have made progress, but %s models remain to fit", length(remaining_tasks)))
   }
