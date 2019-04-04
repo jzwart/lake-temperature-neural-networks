@@ -5,7 +5,10 @@
 #'   reconstruct a complete prediction sequence without duplicates. The value
 #'   should always match the default for prep_pgdl_data_R() (and really should
 #'   be configured from on high for both that fun and this one)
-create_model_config <- function(out_file, phase=c('tune','pretrain_train'), priority_lakes, pgdl_inputs_ind, sequence_cfg) {
+create_model_config <- function(
+  out_file_basename, phase=c('hypertune','pretrain_train'), priority_lakes, pgdl_inputs_ind, sequence_cfg) {
+
+  phase <- match.arg(phase)
 
   # define a template to set the column order and data types for the config file
   template <- tibble(
@@ -23,46 +26,51 @@ create_model_config <- function(out_file, phase=c('tune','pretrain_train'), prio
     min_epochs_test = 0,
     min_epochs_save = 0,
     restore_path = '',
-    save_path = ''
+    save_path = '',
+    site_id = '',
+    task_id = '',
+    pgdl_inputs_md5 = '',
+    row = 0
   ) %>%
     filter(FALSE)
 
-  if(phase == 'tune') {
-    # config for tuning (not yet tested or well thought through)
-    config <- bind_rows(lapply(priority_lakes$site_id, function(site_id) {
+  if(phase == 'hypertune') {
+    # config for tuning (exploratory for now, just using one lake)
+    config <- bind_rows(lapply(priority_lakes$site_id[1], function(site_id) {
       crossing(
-        state_size = c(8,12,16),
-        ec_lambda = c(0.02, 0.01, 0.05)
+        state_size = c(8,16),
+        l1_lambda = c(0.005, 0.02, 0.1)
       ) %>% mutate(
         phase = 'tune',
         learning_rate = 0.005,
         ec_threshold = 24,
+        ec_lambda = 0.04,
         dd_lambda = 0, # 0.15 might be good if we actually had a depth-density constraint
-        l1_lambda = 0.1,
         data_file = sprintf('1_format/tmp/pgdl_inputs/%s.npz', site_id),
-        sequence_offset = sequence_cfg$sequence_offset,
+        sequence_offset = sequence_cfg$sequence_offset, # this should not be edited. it should always match sequence_cfg
         max_batch_obs = 50000, # my computer can handle about 50000 for state_size=14, about 100000 for state_size=8
         n_epochs = 100,
         min_epochs_test = 0,
-        min_epochs_save = 50,
-        restore_path = ''
-      ) %>% bind_rows(
-        template, .
-      ) %>% mutate(
-        # define a task id we can use to name the drake targets and models. use
-        # a hash in the name so that it's concise and yet won't change even if
-        # we change the config row order. use a similar naming scheme for saving
-        # the models
-        task_hash = sapply(1:n(), function(row) { digest::digest(select(., -save_path)[row,]) }),
-        task_id = sprintf('%s.%s', site_id, task_hash),
-        save_path = sprintf('2_model/tmp/%s/tune/%s', site_id, task_hash)
-      ) %>%
-        # attach site_id last so site_id remains a length-1 vector when
+        min_epochs_save = n_epochs,
+        restore_path = '',
+        # attach site_id toward the end so site_id remains a length-1 vector when
         # computing data_file, restore_path, etc. (even though we have 2 tibble
         # rows per site because phase is length 2)
-        mutate(site_id = site_id) %>%
+        site_id = site_id
+      ) %>%
         # bind to the template to standardize the column order
-        bind_rows(template, .)
+        bind_rows(template, .) %>%
+        mutate(
+          # define a task id we can use to name the drake targets and models. use
+          # a hash in the name so that it's concise and yet won't change even if
+          # we change the config row order. use a similar naming scheme for saving
+          # the models
+          task_hash = sapply(1:n(), function(row) { digest::digest(select(., -save_path)[row,]) }),
+          task_id = sprintf('%s.%s', site_id, task_hash),
+          save_path = sprintf('2_model/tmp/%s/tune/%s', site_id, task_hash)
+        ) %>%
+        # keep the cols the same as for pretrain_train, i.e., no task_hash
+        select(-task_hash)
     }))
   } else if(phase == 'pretrain_train') {
     # config for pretrain and train
@@ -75,7 +83,7 @@ create_model_config <- function(out_file, phase=c('tune','pretrain_train'), prio
         dd_lambda = 0, # 0.15 might be good if we actually had a depth-density constraint
         ec_lambda = 0.025,
         data_file = sprintf('1_format/tmp/pgdl_inputs/%s.npz', site_id),
-        sequence_offset = sequence_cfg$sequence_offset,
+        sequence_offset = sequence_cfg$sequence_offset, # this should not be edited. it should always match sequence_cfg
         max_batch_obs = 50000, # my computer can handle 50000 for state_size=14, 100000 for state_size=8
         n_epochs = c(3, 5), # 50, 100 would be better. or higher.
         min_epochs_test = 0,
@@ -94,6 +102,9 @@ create_model_config <- function(out_file, phase=c('tune','pretrain_train'), prio
       mutate(task_id = sprintf('%s.%s', site_id, phase))
   }
 
+  # Make sure the config is structured like the template
+  stopifnot(all.equal(template[c(),], config[c(),]))
+
   # Attach attach information drake can use to extract one config row per target
   config <- config %>% mutate(row = 1:n())
 
@@ -103,7 +114,8 @@ create_model_config <- function(out_file, phase=c('tune','pretrain_train'), prio
   config <- config %>% # Augment the config table with the file hashes
     mutate(pgdl_inputs_md5 = pgdl_inputs_md5[data_file])
 
-  # return(config)
+  out_file <- sprintf('2_model/out/%s.tsv', out_file_basename)
   if(!dir.exists(dirname(out_file))) dir.create(dirname(out_file))
   readr::write_tsv(config, out_file)
+  return(config)
 }

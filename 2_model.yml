@@ -16,30 +16,65 @@ targets:
     depends:
       - 2_model/log/2_model_tasks.ind
 
-  # We're not actually doing hypertuning yet, but here's a start on the config for that effort
+  ## Hyperparameter tuning
+
+  # See notes on training targets below - we're putting a break in the remake pipeline
+  # right here on purpose. The need is explained in GitHub issue #48.
   hypertune_config:
     command: create_model_config(
-      phase = I('tune'),
+      out_file_basename = target_name,
+      phase = I('hypertune'),
       priority_lakes,
       pgdl_inputs_ind = '1_format/log/pgdl_inputs.ind',
       sequence_cfg)
+  # 2_model/out/hypertune_config.tsv:
+  #  command: scmake('hypertune_config')
+  2_model/log/pgdl_hypertuning.ind:
+    command: run_model_tasks(
+      target_name,
+      '2_model/out/hypertune_config.tsv',
+      I('slurm'))
 
-  # If and when we're actually doing hyperparameter tuning, at this point we'd need to
+  # To test a small model batch locally:
+  # source('2_model/src/model_tasks.R'); run_model_tasks(NA, '2_model/out/hypertune_config.tsv', 'pc')
+
+  # If and when we're actually doing hyperparameter tuning for every model, here we'd need to
   # identify the best parameter set for each lake and use that to adjust the following
   # config info for final pretraining and training
 
-  2_model/out/train_config.tsv:
+  ## Training
+
+  # Build train_config.tsv, but use an indicator target with no corresponding data file
+  # target to intentionally break the pipeline here. I.e., create_model_config's main
+  # effect is to build 2_model/log/train_config.tsv, but we're hiding that from remake.
+  #
+  # This approach should allow us to build 2_model/log/pgdl_outputs.ind on Yeti.
+  #
+  # We assign the full data_frame to train_config rather than just assigning a hash
+  # because (1) the storage cost is small and (2) it'll be convenient to be able to
+  # look at that data_frame without loading the file from .tsv every time.
+  train_config:
     command: create_model_config(
-      out_file = target_name,
+      out_file_basename = target_name,
       phase = I('pretrain_train'),
       priority_lakes,
       pgdl_inputs_ind = '1_format/log/pgdl_inputs.ind',
       sequence_cfg)
+  # Here's the data file target we're omitting to break the remake chain:
+  # 2_model/out/train_config.tsv:
+  #  command: scmake('train_config')
 
+  # Don't build this target locally, and don't build it without confidence that
+  # 2_model/out/train_config.tsv is up to date, because remake isn't checking.
+  # Instead, build this on Yeti after manually pushing 2_model/out/train_config.tsv there.
   2_model/log/pgdl_outputs.ind:
     command: run_model_tasks(
       target_name,
-      '2_model/out/train_config.tsv')
-  # to test without yeti:
-  # source('2_model/src/model_tasks.R')
-  # run_model_tasks('2_model/log/pgdl_outputs.ind', '2_model/out/train_config.tsv', 'pc')
+      '2_model/out/train_config.tsv',
+      I('slurm'))
+
+  # To test a small model batch locally:
+  # source('2_model/src/model_tasks.R'); run_model_tasks(NA, '2_model/out/train_config.tsv', 'pc')
+
+  # To test a small model batch on Yeti:
+  # source('2_model/src/model_tasks.R'); run_model_tasks(NA, '2_model/out/train_config.tsv', 'slurm')
