@@ -1,137 +1,137 @@
-phase	learning_rate	state_size	ec_threshold	dd_lambda	ec_lambda	l1_lambda	data_file	sequence_offset	max_batch_obs	n_epochs	min_epochs_test	min_epochs_save	restore_path	save_path	site_id	task_id	pgdl_inputs_md5	row
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_10596466.npz	100	50000	3	0	3		2_model/tmp/nhd_10596466/pretrain	nhd_10596466	nhd_10596466.pretrain	NA	1
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_10596466.npz	100	50000	5	0	5	2_model/tmp/nhd_10596466/pretrain	2_model/tmp/nhd_10596466/train	nhd_10596466	nhd_10596466.train	NA	2
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1097324.npz	100	50000	3	0	3		2_model/tmp/nhd_1097324/pretrain	nhd_1097324	nhd_1097324.pretrain	NA	3
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1097324.npz	100	50000	5	0	5	2_model/tmp/nhd_1097324/pretrain	2_model/tmp/nhd_1097324/train	nhd_1097324	nhd_1097324.train	NA	4
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099052.npz	100	50000	3	0	3		2_model/tmp/nhd_1099052/pretrain	nhd_1099052	nhd_1099052.pretrain	NA	5
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099052.npz	100	50000	5	0	5	2_model/tmp/nhd_1099052/pretrain	2_model/tmp/nhd_1099052/train	nhd_1099052	nhd_1099052.train	NA	6
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099136.npz	100	50000	3	0	3		2_model/tmp/nhd_1099136/pretrain	nhd_1099136	nhd_1099136.pretrain	NA	7
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099136.npz	100	50000	5	0	5	2_model/tmp/nhd_1099136/pretrain	2_model/tmp/nhd_1099136/train	nhd_1099136	nhd_1099136.train	NA	8
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099172.npz	100	50000	3	0	3		2_model/tmp/nhd_1099172/pretrain	nhd_1099172	nhd_1099172.pretrain	NA	9
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099172.npz	100	50000	5	0	5	2_model/tmp/nhd_1099172/pretrain	2_model/tmp/nhd_1099172/train	nhd_1099172	nhd_1099172.train	NA	10
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099240.npz	100	50000	3	0	3		2_model/tmp/nhd_1099240/pretrain	nhd_1099240	nhd_1099240.pretrain	NA	11
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099240.npz	100	50000	5	0	5	2_model/tmp/nhd_1099240/pretrain	2_model/tmp/nhd_1099240/train	nhd_1099240	nhd_1099240.train	NA	12
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099282.npz	100	50000	3	0	3		2_model/tmp/nhd_1099282/pretrain	nhd_1099282	nhd_1099282.pretrain	NA	13
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099282.npz	100	50000	5	0	5	2_model/tmp/nhd_1099282/pretrain	2_model/tmp/nhd_1099282/train	nhd_1099282	nhd_1099282.train	NA	14
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099420.npz	100	50000	3	0	3		2_model/tmp/nhd_1099420/pretrain	nhd_1099420	nhd_1099420.pretrain	NA	15
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099420.npz	100	50000	5	0	5	2_model/tmp/nhd_1099420/pretrain	2_model/tmp/nhd_1099420/train	nhd_1099420	nhd_1099420.train	NA	16
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099430.npz	100	50000	3	0	3		2_model/tmp/nhd_1099430/pretrain	nhd_1099430	nhd_1099430.pretrain	NA	17
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099430.npz	100	50000	5	0	5	2_model/tmp/nhd_1099430/pretrain	2_model/tmp/nhd_1099430/train	nhd_1099430	nhd_1099430.train	NA	18
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099432.npz	100	50000	3	0	3		2_model/tmp/nhd_1099432/pretrain	nhd_1099432	nhd_1099432.pretrain	NA	19
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099432.npz	100	50000	5	0	5	2_model/tmp/nhd_1099432/pretrain	2_model/tmp/nhd_1099432/train	nhd_1099432	nhd_1099432.train	NA	20
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099450.npz	100	50000	3	0	3		2_model/tmp/nhd_1099450/pretrain	nhd_1099450	nhd_1099450.pretrain	NA	21
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099450.npz	100	50000	5	0	5	2_model/tmp/nhd_1099450/pretrain	2_model/tmp/nhd_1099450/train	nhd_1099450	nhd_1099450.train	NA	22
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099476.npz	100	50000	3	0	3		2_model/tmp/nhd_1099476/pretrain	nhd_1099476	nhd_1099476.pretrain	NA	23
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099476.npz	100	50000	5	0	5	2_model/tmp/nhd_1099476/pretrain	2_model/tmp/nhd_1099476/train	nhd_1099476	nhd_1099476.train	NA	24
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099526.npz	100	50000	3	0	3		2_model/tmp/nhd_1099526/pretrain	nhd_1099526	nhd_1099526.pretrain	NA	25
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1099526.npz	100	50000	5	0	5	2_model/tmp/nhd_1099526/pretrain	2_model/tmp/nhd_1099526/train	nhd_1099526	nhd_1099526.train	NA	26
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1100962.npz	100	50000	3	0	3		2_model/tmp/nhd_1100962/pretrain	nhd_1100962	nhd_1100962.pretrain	NA	27
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1100962.npz	100	50000	5	0	5	2_model/tmp/nhd_1100962/pretrain	2_model/tmp/nhd_1100962/train	nhd_1100962	nhd_1100962.train	NA	28
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101504.npz	100	50000	3	0	3		2_model/tmp/nhd_1101504/pretrain	nhd_1101504	nhd_1101504.pretrain	NA	29
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101504.npz	100	50000	5	0	5	2_model/tmp/nhd_1101504/pretrain	2_model/tmp/nhd_1101504/train	nhd_1101504	nhd_1101504.train	NA	30
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101506.npz	100	50000	3	0	3		2_model/tmp/nhd_1101506/pretrain	nhd_1101506	nhd_1101506.pretrain	NA	31
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101506.npz	100	50000	5	0	5	2_model/tmp/nhd_1101506/pretrain	2_model/tmp/nhd_1101506/train	nhd_1101506	nhd_1101506.train	NA	32
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101544.npz	100	50000	3	0	3		2_model/tmp/nhd_1101544/pretrain	nhd_1101544	nhd_1101544.pretrain	NA	33
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101544.npz	100	50000	5	0	5	2_model/tmp/nhd_1101544/pretrain	2_model/tmp/nhd_1101544/train	nhd_1101544	nhd_1101544.train	NA	34
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101590.npz	100	50000	3	0	3		2_model/tmp/nhd_1101590/pretrain	nhd_1101590	nhd_1101590.pretrain	NA	35
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101590.npz	100	50000	5	0	5	2_model/tmp/nhd_1101590/pretrain	2_model/tmp/nhd_1101590/train	nhd_1101590	nhd_1101590.train	NA	36
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101616.npz	100	50000	3	0	3		2_model/tmp/nhd_1101616/pretrain	nhd_1101616	nhd_1101616.pretrain	NA	37
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101616.npz	100	50000	5	0	5	2_model/tmp/nhd_1101616/pretrain	2_model/tmp/nhd_1101616/train	nhd_1101616	nhd_1101616.train	NA	38
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101636.npz	100	50000	3	0	3		2_model/tmp/nhd_1101636/pretrain	nhd_1101636	nhd_1101636.pretrain	NA	39
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101636.npz	100	50000	5	0	5	2_model/tmp/nhd_1101636/pretrain	2_model/tmp/nhd_1101636/train	nhd_1101636	nhd_1101636.train	NA	40
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101684.npz	100	50000	3	0	3		2_model/tmp/nhd_1101684/pretrain	nhd_1101684	nhd_1101684.pretrain	NA	41
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101684.npz	100	50000	5	0	5	2_model/tmp/nhd_1101684/pretrain	2_model/tmp/nhd_1101684/train	nhd_1101684	nhd_1101684.train	NA	42
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101754.npz	100	50000	3	0	3		2_model/tmp/nhd_1101754/pretrain	nhd_1101754	nhd_1101754.pretrain	NA	43
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101754.npz	100	50000	5	0	5	2_model/tmp/nhd_1101754/pretrain	2_model/tmp/nhd_1101754/train	nhd_1101754	nhd_1101754.train	NA	44
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101778.npz	100	50000	3	0	3		2_model/tmp/nhd_1101778/pretrain	nhd_1101778	nhd_1101778.pretrain	NA	45
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101778.npz	100	50000	5	0	5	2_model/tmp/nhd_1101778/pretrain	2_model/tmp/nhd_1101778/train	nhd_1101778	nhd_1101778.train	NA	46
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101812.npz	100	50000	3	0	3		2_model/tmp/nhd_1101812/pretrain	nhd_1101812	nhd_1101812.pretrain	NA	47
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101812.npz	100	50000	5	0	5	2_model/tmp/nhd_1101812/pretrain	2_model/tmp/nhd_1101812/train	nhd_1101812	nhd_1101812.train	NA	48
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101864.npz	100	50000	3	0	3		2_model/tmp/nhd_1101864/pretrain	nhd_1101864	nhd_1101864.pretrain	NA	49
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101864.npz	100	50000	5	0	5	2_model/tmp/nhd_1101864/pretrain	2_model/tmp/nhd_1101864/train	nhd_1101864	nhd_1101864.train	NA	50
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101938.npz	100	50000	3	0	3		2_model/tmp/nhd_1101938/pretrain	nhd_1101938	nhd_1101938.pretrain	NA	51
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101938.npz	100	50000	5	0	5	2_model/tmp/nhd_1101938/pretrain	2_model/tmp/nhd_1101938/train	nhd_1101938	nhd_1101938.train	NA	52
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101942.npz	100	50000	3	0	3		2_model/tmp/nhd_1101942/pretrain	nhd_1101942	nhd_1101942.pretrain	NA	53
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1101942.npz	100	50000	5	0	5	2_model/tmp/nhd_1101942/pretrain	2_model/tmp/nhd_1101942/train	nhd_1101942	nhd_1101942.train	NA	54
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1102086.npz	100	50000	3	0	3		2_model/tmp/nhd_1102086/pretrain	nhd_1102086	nhd_1102086.pretrain	NA	55
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1102086.npz	100	50000	5	0	5	2_model/tmp/nhd_1102086/pretrain	2_model/tmp/nhd_1102086/train	nhd_1102086	nhd_1102086.train	NA	56
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1102088.npz	100	50000	3	0	3		2_model/tmp/nhd_1102088/pretrain	nhd_1102088	nhd_1102088.pretrain	NA	57
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1102088.npz	100	50000	5	0	5	2_model/tmp/nhd_1102088/pretrain	2_model/tmp/nhd_1102088/train	nhd_1102088	nhd_1102088.train	NA	58
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1102284.npz	100	50000	3	0	3		2_model/tmp/nhd_1102284/pretrain	nhd_1102284	nhd_1102284.pretrain	NA	59
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1102284.npz	100	50000	5	0	5	2_model/tmp/nhd_1102284/pretrain	2_model/tmp/nhd_1102284/train	nhd_1102284	nhd_1102284.train	NA	60
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1102366.npz	100	50000	3	0	3		2_model/tmp/nhd_1102366/pretrain	nhd_1102366	nhd_1102366.pretrain	NA	61
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_1102366.npz	100	50000	5	0	5	2_model/tmp/nhd_1102366/pretrain	2_model/tmp/nhd_1102366/train	nhd_1102366	nhd_1102366.train	NA	62
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120051922.npz	100	50000	3	0	3		2_model/tmp/nhd_120051922/pretrain	nhd_120051922	nhd_120051922.pretrain	NA	63
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120051922.npz	100	50000	5	0	5	2_model/tmp/nhd_120051922/pretrain	2_model/tmp/nhd_120051922/train	nhd_120051922	nhd_120051922.train	NA	64
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120052022.npz	100	50000	3	0	3		2_model/tmp/nhd_120052022/pretrain	nhd_120052022	nhd_120052022.pretrain	NA	65
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120052022.npz	100	50000	5	0	5	2_model/tmp/nhd_120052022/pretrain	2_model/tmp/nhd_120052022/train	nhd_120052022	nhd_120052022.train	NA	66
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120052233.npz	100	50000	3	0	3		2_model/tmp/nhd_120052233/pretrain	nhd_120052233	nhd_120052233.pretrain	NA	67
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120052233.npz	100	50000	5	0	5	2_model/tmp/nhd_120052233/pretrain	2_model/tmp/nhd_120052233/train	nhd_120052233	nhd_120052233.train	NA	68
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120052351.npz	100	50000	3	0	3		2_model/tmp/nhd_120052351/pretrain	nhd_120052351	nhd_120052351.pretrain	NA	69
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120052351.npz	100	50000	5	0	5	2_model/tmp/nhd_120052351/pretrain	2_model/tmp/nhd_120052351/train	nhd_120052351	nhd_120052351.train	NA	70
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120052587.npz	100	50000	3	0	3		2_model/tmp/nhd_120052587/pretrain	nhd_120052587	nhd_120052587.pretrain	NA	71
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120052587.npz	100	50000	5	0	5	2_model/tmp/nhd_120052587/pretrain	2_model/tmp/nhd_120052587/train	nhd_120052587	nhd_120052587.train	NA	72
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120053694.npz	100	50000	3	0	3		2_model/tmp/nhd_120053694/pretrain	nhd_120053694	nhd_120053694.pretrain	NA	73
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_120053694.npz	100	50000	5	0	5	2_model/tmp/nhd_120053694/pretrain	2_model/tmp/nhd_120053694/train	nhd_120053694	nhd_120053694.train	NA	74
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_12160852.npz	100	50000	3	0	3		2_model/tmp/nhd_12160852/pretrain	nhd_12160852	nhd_12160852.pretrain	NA	75
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_12160852.npz	100	50000	5	0	5	2_model/tmp/nhd_12160852/pretrain	2_model/tmp/nhd_12160852/train	nhd_12160852	nhd_12160852.train	NA	76
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_12162854.npz	100	50000	3	0	3		2_model/tmp/nhd_12162854/pretrain	nhd_12162854	nhd_12162854.pretrain	NA	77
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_12162854.npz	100	50000	5	0	5	2_model/tmp/nhd_12162854/pretrain	2_model/tmp/nhd_12162854/train	nhd_12162854	nhd_12162854.train	NA	78
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13290898.npz	100	50000	3	0	3		2_model/tmp/nhd_13290898/pretrain	nhd_13290898	nhd_13290898.pretrain	NA	79
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13290898.npz	100	50000	5	0	5	2_model/tmp/nhd_13290898/pretrain	2_model/tmp/nhd_13290898/train	nhd_13290898	nhd_13290898.train	NA	80
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13293262.npz	100	50000	3	0	3		2_model/tmp/nhd_13293262/pretrain	nhd_13293262	nhd_13293262.pretrain	NA	81
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13293262.npz	100	50000	5	0	5	2_model/tmp/nhd_13293262/pretrain	2_model/tmp/nhd_13293262/train	nhd_13293262	nhd_13293262.train	NA	82
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13294464.npz	100	50000	3	0	3		2_model/tmp/nhd_13294464/pretrain	nhd_13294464	nhd_13294464.pretrain	NA	83
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13294464.npz	100	50000	5	0	5	2_model/tmp/nhd_13294464/pretrain	2_model/tmp/nhd_13294464/train	nhd_13294464	nhd_13294464.train	NA	84
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13294928.npz	100	50000	3	0	3		2_model/tmp/nhd_13294928/pretrain	nhd_13294928	nhd_13294928.pretrain	NA	85
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13294928.npz	100	50000	5	0	5	2_model/tmp/nhd_13294928/pretrain	2_model/tmp/nhd_13294928/train	nhd_13294928	nhd_13294928.train	NA	86
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13343906.npz	100	50000	3	0	3		2_model/tmp/nhd_13343906/pretrain	nhd_13343906	nhd_13343906.pretrain	NA	87
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13343906.npz	100	50000	5	0	5	2_model/tmp/nhd_13343906/pretrain	2_model/tmp/nhd_13343906/train	nhd_13343906	nhd_13343906.train	NA	88
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13344056.npz	100	50000	3	0	3		2_model/tmp/nhd_13344056/pretrain	nhd_13344056	nhd_13344056.pretrain	NA	89
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13344056.npz	100	50000	5	0	5	2_model/tmp/nhd_13344056/pretrain	2_model/tmp/nhd_13344056/train	nhd_13344056	nhd_13344056.train	NA	90
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13344170.npz	100	50000	3	0	3		2_model/tmp/nhd_13344170/pretrain	nhd_13344170	nhd_13344170.pretrain	NA	91
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13344170.npz	100	50000	5	0	5	2_model/tmp/nhd_13344170/pretrain	2_model/tmp/nhd_13344170/train	nhd_13344170	nhd_13344170.train	NA	92
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13344210.npz	100	50000	3	0	3		2_model/tmp/nhd_13344210/pretrain	nhd_13344210	nhd_13344210.pretrain	NA	93
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13344210.npz	100	50000	5	0	5	2_model/tmp/nhd_13344210/pretrain	2_model/tmp/nhd_13344210/train	nhd_13344210	nhd_13344210.train	NA	94
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13344284.npz	100	50000	3	0	3		2_model/tmp/nhd_13344284/pretrain	nhd_13344284	nhd_13344284.pretrain	NA	95
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13344284.npz	100	50000	5	0	5	2_model/tmp/nhd_13344284/pretrain	2_model/tmp/nhd_13344284/train	nhd_13344284	nhd_13344284.train	NA	96
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13393533.npz	100	50000	3	0	3		2_model/tmp/nhd_13393533/pretrain	nhd_13393533	nhd_13393533.pretrain	NA	97
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13393533.npz	100	50000	5	0	5	2_model/tmp/nhd_13393533/pretrain	2_model/tmp/nhd_13393533/train	nhd_13393533	nhd_13393533.train	NA	98
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13393567.npz	100	50000	3	0	3		2_model/tmp/nhd_13393567/pretrain	nhd_13393567	nhd_13393567.pretrain	NA	99
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13393567.npz	100	50000	5	0	5	2_model/tmp/nhd_13393567/pretrain	2_model/tmp/nhd_13393567/train	nhd_13393567	nhd_13393567.train	NA	100
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13631637.npz	100	50000	3	0	3		2_model/tmp/nhd_13631637/pretrain	nhd_13631637	nhd_13631637.pretrain	NA	101
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_13631637.npz	100	50000	5	0	5	2_model/tmp/nhd_13631637/pretrain	2_model/tmp/nhd_13631637/train	nhd_13631637	nhd_13631637.train	NA	102
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_14783883.npz	100	50000	3	0	3		2_model/tmp/nhd_14783883/pretrain	nhd_14783883	nhd_14783883.pretrain	NA	103
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_14783883.npz	100	50000	5	0	5	2_model/tmp/nhd_14783883/pretrain	2_model/tmp/nhd_14783883/train	nhd_14783883	nhd_14783883.train	NA	104
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2349188.npz	100	50000	3	0	3		2_model/tmp/nhd_2349188/pretrain	nhd_2349188	nhd_2349188.pretrain	NA	105
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2349188.npz	100	50000	5	0	5	2_model/tmp/nhd_2349188/pretrain	2_model/tmp/nhd_2349188/train	nhd_2349188	nhd_2349188.train	NA	106
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2349198.npz	100	50000	3	0	3		2_model/tmp/nhd_2349198/pretrain	nhd_2349198	nhd_2349198.pretrain	NA	107
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2349198.npz	100	50000	5	0	5	2_model/tmp/nhd_2349198/pretrain	2_model/tmp/nhd_2349198/train	nhd_2349198	nhd_2349198.train	NA	108
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2353946.npz	100	50000	3	0	3		2_model/tmp/nhd_2353946/pretrain	nhd_2353946	nhd_2353946.pretrain	NA	109
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2353946.npz	100	50000	5	0	5	2_model/tmp/nhd_2353946/pretrain	2_model/tmp/nhd_2353946/train	nhd_2353946	nhd_2353946.train	NA	110
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2384584.npz	100	50000	3	0	3		2_model/tmp/nhd_2384584/pretrain	nhd_2384584	nhd_2384584.pretrain	NA	111
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2384584.npz	100	50000	5	0	5	2_model/tmp/nhd_2384584/pretrain	2_model/tmp/nhd_2384584/train	nhd_2384584	nhd_2384584.train	NA	112
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2384766.npz	100	50000	3	0	3		2_model/tmp/nhd_2384766/pretrain	nhd_2384766	nhd_2384766.pretrain	NA	113
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2384766.npz	100	50000	5	0	5	2_model/tmp/nhd_2384766/pretrain	2_model/tmp/nhd_2384766/train	nhd_2384766	nhd_2384766.train	NA	114
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2385444.npz	100	50000	3	0	3		2_model/tmp/nhd_2385444/pretrain	nhd_2385444	nhd_2385444.pretrain	NA	115
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2385444.npz	100	50000	5	0	5	2_model/tmp/nhd_2385444/pretrain	2_model/tmp/nhd_2385444/train	nhd_2385444	nhd_2385444.train	NA	116
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2385496.npz	100	50000	3	0	3		2_model/tmp/nhd_2385496/pretrain	nhd_2385496	nhd_2385496.pretrain	NA	117
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2385496.npz	100	50000	5	0	5	2_model/tmp/nhd_2385496/pretrain	2_model/tmp/nhd_2385496/train	nhd_2385496	nhd_2385496.train	NA	118
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2385648.npz	100	50000	3	0	3		2_model/tmp/nhd_2385648/pretrain	nhd_2385648	nhd_2385648.pretrain	NA	119
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2385648.npz	100	50000	5	0	5	2_model/tmp/nhd_2385648/pretrain	2_model/tmp/nhd_2385648/train	nhd_2385648	nhd_2385648.train	NA	120
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2647582.npz	100	50000	3	0	3		2_model/tmp/nhd_2647582/pretrain	nhd_2647582	nhd_2647582.pretrain	NA	121
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2647582.npz	100	50000	5	0	5	2_model/tmp/nhd_2647582/pretrain	2_model/tmp/nhd_2647582/train	nhd_2647582	nhd_2647582.train	NA	122
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2648034.npz	100	50000	3	0	3		2_model/tmp/nhd_2648034/pretrain	nhd_2648034	nhd_2648034.pretrain	NA	123
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2648034.npz	100	50000	5	0	5	2_model/tmp/nhd_2648034/pretrain	2_model/tmp/nhd_2648034/train	nhd_2648034	nhd_2648034.train	NA	124
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2723765.npz	100	50000	3	0	3		2_model/tmp/nhd_2723765/pretrain	nhd_2723765	nhd_2723765.pretrain	NA	125
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2723765.npz	100	50000	5	0	5	2_model/tmp/nhd_2723765/pretrain	2_model/tmp/nhd_2723765/train	nhd_2723765	nhd_2723765.train	NA	126
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2723803.npz	100	50000	3	0	3		2_model/tmp/nhd_2723803/pretrain	nhd_2723803	nhd_2723803.pretrain	NA	127
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2723803.npz	100	50000	5	0	5	2_model/tmp/nhd_2723803/pretrain	2_model/tmp/nhd_2723803/train	nhd_2723803	nhd_2723803.train	NA	128
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2723871.npz	100	50000	3	0	3		2_model/tmp/nhd_2723871/pretrain	nhd_2723871	nhd_2723871.pretrain	NA	129
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_2723871.npz	100	50000	5	0	5	2_model/tmp/nhd_2723871/pretrain	2_model/tmp/nhd_2723871/train	nhd_2723871	nhd_2723871.train	NA	130
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_4250586.npz	100	50000	3	0	3		2_model/tmp/nhd_4250586/pretrain	nhd_4250586	nhd_4250586.pretrain	NA	131
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_4250586.npz	100	50000	5	0	5	2_model/tmp/nhd_4250586/pretrain	2_model/tmp/nhd_4250586/train	nhd_4250586	nhd_4250586.train	NA	132
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_4250588.npz	100	50000	3	0	3		2_model/tmp/nhd_4250588/pretrain	nhd_4250588	nhd_4250588.pretrain	NA	133
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_4250588.npz	100	50000	5	0	5	2_model/tmp/nhd_4250588/pretrain	2_model/tmp/nhd_4250588/train	nhd_4250588	nhd_4250588.train	NA	134
-pretrain	0.008	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_9022741.npz	100	50000	3	0	3		2_model/tmp/nhd_9022741/pretrain	nhd_9022741	nhd_9022741.pretrain	NA	135
-train	0.005	12	24	0	0.025	NA	1_format/tmp/pgdl_inputs/nhd_9022741.npz	100	50000	5	0	5	2_model/tmp/nhd_9022741/pretrain	2_model/tmp/nhd_9022741/train	nhd_9022741	nhd_9022741.train	NA	136
+phase	learning_rate	state_size	ec_threshold	dd_lambda	ec_lambda	l1_lambda	data_file	sequence_offset	max_batch_obs	n_epochs	min_epochs_test	min_epochs_save	restore_path	save_path	site_id	task_id	ncpus	ngpus	gpu.type	walltime	pgdl_inputs_md5	row
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_10596466.npz	100	50000	200	0	200		2_model/tmp/nhd_10596466/pretrain	nhd_10596466	nhd_10596466.pretrain	1	1	quadro	120	NA	1
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_10596466.npz	100	50000	200	0	200	2_model/tmp/nhd_10596466/pretrain	2_model/tmp/nhd_10596466/train	nhd_10596466	nhd_10596466.train	1	1	quadro	120	NA	2
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1097324.npz	100	50000	200	0	200		2_model/tmp/nhd_1097324/pretrain	nhd_1097324	nhd_1097324.pretrain	1	1	quadro	120	NA	3
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1097324.npz	100	50000	200	0	200	2_model/tmp/nhd_1097324/pretrain	2_model/tmp/nhd_1097324/train	nhd_1097324	nhd_1097324.train	1	1	quadro	120	NA	4
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099052.npz	100	50000	200	0	200		2_model/tmp/nhd_1099052/pretrain	nhd_1099052	nhd_1099052.pretrain	1	1	quadro	120	NA	5
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099052.npz	100	50000	200	0	200	2_model/tmp/nhd_1099052/pretrain	2_model/tmp/nhd_1099052/train	nhd_1099052	nhd_1099052.train	1	1	quadro	120	NA	6
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099136.npz	100	50000	200	0	200		2_model/tmp/nhd_1099136/pretrain	nhd_1099136	nhd_1099136.pretrain	1	1	quadro	120	NA	7
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099136.npz	100	50000	200	0	200	2_model/tmp/nhd_1099136/pretrain	2_model/tmp/nhd_1099136/train	nhd_1099136	nhd_1099136.train	1	1	quadro	120	NA	8
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099172.npz	100	50000	200	0	200		2_model/tmp/nhd_1099172/pretrain	nhd_1099172	nhd_1099172.pretrain	1	1	quadro	120	NA	9
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099172.npz	100	50000	200	0	200	2_model/tmp/nhd_1099172/pretrain	2_model/tmp/nhd_1099172/train	nhd_1099172	nhd_1099172.train	1	1	quadro	120	NA	10
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099240.npz	100	50000	200	0	200		2_model/tmp/nhd_1099240/pretrain	nhd_1099240	nhd_1099240.pretrain	1	1	quadro	120	NA	11
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099240.npz	100	50000	200	0	200	2_model/tmp/nhd_1099240/pretrain	2_model/tmp/nhd_1099240/train	nhd_1099240	nhd_1099240.train	1	1	quadro	120	NA	12
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099282.npz	100	50000	200	0	200		2_model/tmp/nhd_1099282/pretrain	nhd_1099282	nhd_1099282.pretrain	1	1	quadro	120	NA	13
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099282.npz	100	50000	200	0	200	2_model/tmp/nhd_1099282/pretrain	2_model/tmp/nhd_1099282/train	nhd_1099282	nhd_1099282.train	1	1	quadro	120	NA	14
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099420.npz	100	50000	200	0	200		2_model/tmp/nhd_1099420/pretrain	nhd_1099420	nhd_1099420.pretrain	1	1	quadro	120	NA	15
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099420.npz	100	50000	200	0	200	2_model/tmp/nhd_1099420/pretrain	2_model/tmp/nhd_1099420/train	nhd_1099420	nhd_1099420.train	1	1	quadro	120	NA	16
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099430.npz	100	50000	200	0	200		2_model/tmp/nhd_1099430/pretrain	nhd_1099430	nhd_1099430.pretrain	1	1	quadro	120	NA	17
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099430.npz	100	50000	200	0	200	2_model/tmp/nhd_1099430/pretrain	2_model/tmp/nhd_1099430/train	nhd_1099430	nhd_1099430.train	1	1	quadro	120	NA	18
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099432.npz	100	50000	200	0	200		2_model/tmp/nhd_1099432/pretrain	nhd_1099432	nhd_1099432.pretrain	1	1	quadro	120	NA	19
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099432.npz	100	50000	200	0	200	2_model/tmp/nhd_1099432/pretrain	2_model/tmp/nhd_1099432/train	nhd_1099432	nhd_1099432.train	1	1	quadro	120	NA	20
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099450.npz	100	50000	200	0	200		2_model/tmp/nhd_1099450/pretrain	nhd_1099450	nhd_1099450.pretrain	1	1	quadro	120	NA	21
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099450.npz	100	50000	200	0	200	2_model/tmp/nhd_1099450/pretrain	2_model/tmp/nhd_1099450/train	nhd_1099450	nhd_1099450.train	1	1	quadro	120	NA	22
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099476.npz	100	50000	200	0	200		2_model/tmp/nhd_1099476/pretrain	nhd_1099476	nhd_1099476.pretrain	1	1	quadro	120	NA	23
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099476.npz	100	50000	200	0	200	2_model/tmp/nhd_1099476/pretrain	2_model/tmp/nhd_1099476/train	nhd_1099476	nhd_1099476.train	1	1	quadro	120	NA	24
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099526.npz	100	50000	200	0	200		2_model/tmp/nhd_1099526/pretrain	nhd_1099526	nhd_1099526.pretrain	1	1	quadro	120	NA	25
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1099526.npz	100	50000	200	0	200	2_model/tmp/nhd_1099526/pretrain	2_model/tmp/nhd_1099526/train	nhd_1099526	nhd_1099526.train	1	1	quadro	120	NA	26
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1100962.npz	100	50000	200	0	200		2_model/tmp/nhd_1100962/pretrain	nhd_1100962	nhd_1100962.pretrain	1	1	quadro	120	NA	27
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1100962.npz	100	50000	200	0	200	2_model/tmp/nhd_1100962/pretrain	2_model/tmp/nhd_1100962/train	nhd_1100962	nhd_1100962.train	1	1	quadro	120	NA	28
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101504.npz	100	50000	200	0	200		2_model/tmp/nhd_1101504/pretrain	nhd_1101504	nhd_1101504.pretrain	1	1	quadro	120	NA	29
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101504.npz	100	50000	200	0	200	2_model/tmp/nhd_1101504/pretrain	2_model/tmp/nhd_1101504/train	nhd_1101504	nhd_1101504.train	1	1	quadro	120	NA	30
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101506.npz	100	50000	200	0	200		2_model/tmp/nhd_1101506/pretrain	nhd_1101506	nhd_1101506.pretrain	1	1	quadro	120	NA	31
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101506.npz	100	50000	200	0	200	2_model/tmp/nhd_1101506/pretrain	2_model/tmp/nhd_1101506/train	nhd_1101506	nhd_1101506.train	1	1	quadro	120	NA	32
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101544.npz	100	50000	200	0	200		2_model/tmp/nhd_1101544/pretrain	nhd_1101544	nhd_1101544.pretrain	1	1	quadro	120	NA	33
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101544.npz	100	50000	200	0	200	2_model/tmp/nhd_1101544/pretrain	2_model/tmp/nhd_1101544/train	nhd_1101544	nhd_1101544.train	1	1	quadro	120	NA	34
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101590.npz	100	50000	200	0	200		2_model/tmp/nhd_1101590/pretrain	nhd_1101590	nhd_1101590.pretrain	1	1	quadro	120	NA	35
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101590.npz	100	50000	200	0	200	2_model/tmp/nhd_1101590/pretrain	2_model/tmp/nhd_1101590/train	nhd_1101590	nhd_1101590.train	1	1	quadro	120	NA	36
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101616.npz	100	50000	200	0	200		2_model/tmp/nhd_1101616/pretrain	nhd_1101616	nhd_1101616.pretrain	1	1	quadro	120	NA	37
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101616.npz	100	50000	200	0	200	2_model/tmp/nhd_1101616/pretrain	2_model/tmp/nhd_1101616/train	nhd_1101616	nhd_1101616.train	1	1	quadro	120	NA	38
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101636.npz	100	50000	200	0	200		2_model/tmp/nhd_1101636/pretrain	nhd_1101636	nhd_1101636.pretrain	1	1	quadro	120	NA	39
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101636.npz	100	50000	200	0	200	2_model/tmp/nhd_1101636/pretrain	2_model/tmp/nhd_1101636/train	nhd_1101636	nhd_1101636.train	1	1	quadro	120	NA	40
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101684.npz	100	50000	200	0	200		2_model/tmp/nhd_1101684/pretrain	nhd_1101684	nhd_1101684.pretrain	1	1	quadro	120	NA	41
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101684.npz	100	50000	200	0	200	2_model/tmp/nhd_1101684/pretrain	2_model/tmp/nhd_1101684/train	nhd_1101684	nhd_1101684.train	1	1	quadro	120	NA	42
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101754.npz	100	50000	200	0	200		2_model/tmp/nhd_1101754/pretrain	nhd_1101754	nhd_1101754.pretrain	1	1	quadro	120	NA	43
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101754.npz	100	50000	200	0	200	2_model/tmp/nhd_1101754/pretrain	2_model/tmp/nhd_1101754/train	nhd_1101754	nhd_1101754.train	1	1	quadro	120	NA	44
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101778.npz	100	50000	200	0	200		2_model/tmp/nhd_1101778/pretrain	nhd_1101778	nhd_1101778.pretrain	1	1	quadro	120	NA	45
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101778.npz	100	50000	200	0	200	2_model/tmp/nhd_1101778/pretrain	2_model/tmp/nhd_1101778/train	nhd_1101778	nhd_1101778.train	1	1	quadro	120	NA	46
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101812.npz	100	50000	200	0	200		2_model/tmp/nhd_1101812/pretrain	nhd_1101812	nhd_1101812.pretrain	1	1	quadro	120	NA	47
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101812.npz	100	50000	200	0	200	2_model/tmp/nhd_1101812/pretrain	2_model/tmp/nhd_1101812/train	nhd_1101812	nhd_1101812.train	1	1	quadro	120	NA	48
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101864.npz	100	50000	200	0	200		2_model/tmp/nhd_1101864/pretrain	nhd_1101864	nhd_1101864.pretrain	1	1	quadro	120	NA	49
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101864.npz	100	50000	200	0	200	2_model/tmp/nhd_1101864/pretrain	2_model/tmp/nhd_1101864/train	nhd_1101864	nhd_1101864.train	1	1	quadro	120	NA	50
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101938.npz	100	50000	200	0	200		2_model/tmp/nhd_1101938/pretrain	nhd_1101938	nhd_1101938.pretrain	1	1	quadro	120	NA	51
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101938.npz	100	50000	200	0	200	2_model/tmp/nhd_1101938/pretrain	2_model/tmp/nhd_1101938/train	nhd_1101938	nhd_1101938.train	1	1	quadro	120	NA	52
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101942.npz	100	50000	200	0	200		2_model/tmp/nhd_1101942/pretrain	nhd_1101942	nhd_1101942.pretrain	1	1	quadro	120	NA	53
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1101942.npz	100	50000	200	0	200	2_model/tmp/nhd_1101942/pretrain	2_model/tmp/nhd_1101942/train	nhd_1101942	nhd_1101942.train	1	1	quadro	120	NA	54
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1102086.npz	100	50000	200	0	200		2_model/tmp/nhd_1102086/pretrain	nhd_1102086	nhd_1102086.pretrain	1	1	quadro	120	NA	55
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1102086.npz	100	50000	200	0	200	2_model/tmp/nhd_1102086/pretrain	2_model/tmp/nhd_1102086/train	nhd_1102086	nhd_1102086.train	1	1	quadro	120	NA	56
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1102088.npz	100	50000	200	0	200		2_model/tmp/nhd_1102088/pretrain	nhd_1102088	nhd_1102088.pretrain	1	1	quadro	120	NA	57
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1102088.npz	100	50000	200	0	200	2_model/tmp/nhd_1102088/pretrain	2_model/tmp/nhd_1102088/train	nhd_1102088	nhd_1102088.train	1	1	quadro	120	NA	58
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1102284.npz	100	50000	200	0	200		2_model/tmp/nhd_1102284/pretrain	nhd_1102284	nhd_1102284.pretrain	1	1	quadro	120	NA	59
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1102284.npz	100	50000	200	0	200	2_model/tmp/nhd_1102284/pretrain	2_model/tmp/nhd_1102284/train	nhd_1102284	nhd_1102284.train	1	1	quadro	120	NA	60
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1102366.npz	100	50000	200	0	200		2_model/tmp/nhd_1102366/pretrain	nhd_1102366	nhd_1102366.pretrain	1	1	quadro	120	NA	61
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_1102366.npz	100	50000	200	0	200	2_model/tmp/nhd_1102366/pretrain	2_model/tmp/nhd_1102366/train	nhd_1102366	nhd_1102366.train	1	1	quadro	120	NA	62
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120051922.npz	100	50000	200	0	200		2_model/tmp/nhd_120051922/pretrain	nhd_120051922	nhd_120051922.pretrain	1	1	quadro	120	NA	63
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120051922.npz	100	50000	200	0	200	2_model/tmp/nhd_120051922/pretrain	2_model/tmp/nhd_120051922/train	nhd_120051922	nhd_120051922.train	1	1	quadro	120	NA	64
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120052022.npz	100	50000	200	0	200		2_model/tmp/nhd_120052022/pretrain	nhd_120052022	nhd_120052022.pretrain	1	1	quadro	120	NA	65
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120052022.npz	100	50000	200	0	200	2_model/tmp/nhd_120052022/pretrain	2_model/tmp/nhd_120052022/train	nhd_120052022	nhd_120052022.train	1	1	quadro	120	NA	66
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120052233.npz	100	50000	200	0	200		2_model/tmp/nhd_120052233/pretrain	nhd_120052233	nhd_120052233.pretrain	1	1	quadro	120	NA	67
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120052233.npz	100	50000	200	0	200	2_model/tmp/nhd_120052233/pretrain	2_model/tmp/nhd_120052233/train	nhd_120052233	nhd_120052233.train	1	1	quadro	120	NA	68
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120052351.npz	100	50000	200	0	200		2_model/tmp/nhd_120052351/pretrain	nhd_120052351	nhd_120052351.pretrain	1	1	quadro	120	NA	69
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120052351.npz	100	50000	200	0	200	2_model/tmp/nhd_120052351/pretrain	2_model/tmp/nhd_120052351/train	nhd_120052351	nhd_120052351.train	1	1	quadro	120	NA	70
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120052587.npz	100	50000	200	0	200		2_model/tmp/nhd_120052587/pretrain	nhd_120052587	nhd_120052587.pretrain	1	1	quadro	120	NA	71
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120052587.npz	100	50000	200	0	200	2_model/tmp/nhd_120052587/pretrain	2_model/tmp/nhd_120052587/train	nhd_120052587	nhd_120052587.train	1	1	quadro	120	NA	72
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120053694.npz	100	50000	200	0	200		2_model/tmp/nhd_120053694/pretrain	nhd_120053694	nhd_120053694.pretrain	1	1	quadro	120	NA	73
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_120053694.npz	100	50000	200	0	200	2_model/tmp/nhd_120053694/pretrain	2_model/tmp/nhd_120053694/train	nhd_120053694	nhd_120053694.train	1	1	quadro	120	NA	74
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_12160852.npz	100	50000	200	0	200		2_model/tmp/nhd_12160852/pretrain	nhd_12160852	nhd_12160852.pretrain	1	1	quadro	120	NA	75
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_12160852.npz	100	50000	200	0	200	2_model/tmp/nhd_12160852/pretrain	2_model/tmp/nhd_12160852/train	nhd_12160852	nhd_12160852.train	1	1	quadro	120	NA	76
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_12162854.npz	100	50000	200	0	200		2_model/tmp/nhd_12162854/pretrain	nhd_12162854	nhd_12162854.pretrain	1	1	quadro	120	NA	77
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_12162854.npz	100	50000	200	0	200	2_model/tmp/nhd_12162854/pretrain	2_model/tmp/nhd_12162854/train	nhd_12162854	nhd_12162854.train	1	1	quadro	120	NA	78
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13290898.npz	100	50000	200	0	200		2_model/tmp/nhd_13290898/pretrain	nhd_13290898	nhd_13290898.pretrain	1	1	quadro	120	NA	79
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13290898.npz	100	50000	200	0	200	2_model/tmp/nhd_13290898/pretrain	2_model/tmp/nhd_13290898/train	nhd_13290898	nhd_13290898.train	1	1	quadro	120	NA	80
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13293262.npz	100	50000	200	0	200		2_model/tmp/nhd_13293262/pretrain	nhd_13293262	nhd_13293262.pretrain	1	1	quadro	120	NA	81
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13293262.npz	100	50000	200	0	200	2_model/tmp/nhd_13293262/pretrain	2_model/tmp/nhd_13293262/train	nhd_13293262	nhd_13293262.train	1	1	quadro	120	NA	82
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13294464.npz	100	50000	200	0	200		2_model/tmp/nhd_13294464/pretrain	nhd_13294464	nhd_13294464.pretrain	1	1	quadro	120	NA	83
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13294464.npz	100	50000	200	0	200	2_model/tmp/nhd_13294464/pretrain	2_model/tmp/nhd_13294464/train	nhd_13294464	nhd_13294464.train	1	1	quadro	120	NA	84
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13294928.npz	100	50000	200	0	200		2_model/tmp/nhd_13294928/pretrain	nhd_13294928	nhd_13294928.pretrain	1	1	quadro	120	NA	85
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13294928.npz	100	50000	200	0	200	2_model/tmp/nhd_13294928/pretrain	2_model/tmp/nhd_13294928/train	nhd_13294928	nhd_13294928.train	1	1	quadro	120	NA	86
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13343906.npz	100	50000	200	0	200		2_model/tmp/nhd_13343906/pretrain	nhd_13343906	nhd_13343906.pretrain	1	1	quadro	120	NA	87
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13343906.npz	100	50000	200	0	200	2_model/tmp/nhd_13343906/pretrain	2_model/tmp/nhd_13343906/train	nhd_13343906	nhd_13343906.train	1	1	quadro	120	NA	88
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13344056.npz	100	50000	200	0	200		2_model/tmp/nhd_13344056/pretrain	nhd_13344056	nhd_13344056.pretrain	1	1	quadro	120	NA	89
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13344056.npz	100	50000	200	0	200	2_model/tmp/nhd_13344056/pretrain	2_model/tmp/nhd_13344056/train	nhd_13344056	nhd_13344056.train	1	1	quadro	120	NA	90
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13344170.npz	100	50000	200	0	200		2_model/tmp/nhd_13344170/pretrain	nhd_13344170	nhd_13344170.pretrain	1	1	quadro	120	NA	91
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13344170.npz	100	50000	200	0	200	2_model/tmp/nhd_13344170/pretrain	2_model/tmp/nhd_13344170/train	nhd_13344170	nhd_13344170.train	1	1	quadro	120	NA	92
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13344210.npz	100	50000	200	0	200		2_model/tmp/nhd_13344210/pretrain	nhd_13344210	nhd_13344210.pretrain	1	1	quadro	120	NA	93
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13344210.npz	100	50000	200	0	200	2_model/tmp/nhd_13344210/pretrain	2_model/tmp/nhd_13344210/train	nhd_13344210	nhd_13344210.train	1	1	quadro	120	NA	94
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13344284.npz	100	50000	200	0	200		2_model/tmp/nhd_13344284/pretrain	nhd_13344284	nhd_13344284.pretrain	1	1	quadro	120	NA	95
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13344284.npz	100	50000	200	0	200	2_model/tmp/nhd_13344284/pretrain	2_model/tmp/nhd_13344284/train	nhd_13344284	nhd_13344284.train	1	1	quadro	120	NA	96
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13393533.npz	100	50000	200	0	200		2_model/tmp/nhd_13393533/pretrain	nhd_13393533	nhd_13393533.pretrain	1	1	quadro	120	NA	97
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13393533.npz	100	50000	200	0	200	2_model/tmp/nhd_13393533/pretrain	2_model/tmp/nhd_13393533/train	nhd_13393533	nhd_13393533.train	1	1	quadro	120	NA	98
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13393567.npz	100	50000	200	0	200		2_model/tmp/nhd_13393567/pretrain	nhd_13393567	nhd_13393567.pretrain	1	1	quadro	120	NA	99
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13393567.npz	100	50000	200	0	200	2_model/tmp/nhd_13393567/pretrain	2_model/tmp/nhd_13393567/train	nhd_13393567	nhd_13393567.train	1	1	quadro	120	NA	100
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13631637.npz	100	50000	200	0	200		2_model/tmp/nhd_13631637/pretrain	nhd_13631637	nhd_13631637.pretrain	1	1	quadro	120	NA	101
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_13631637.npz	100	50000	200	0	200	2_model/tmp/nhd_13631637/pretrain	2_model/tmp/nhd_13631637/train	nhd_13631637	nhd_13631637.train	1	1	quadro	120	NA	102
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_14783883.npz	100	50000	200	0	200		2_model/tmp/nhd_14783883/pretrain	nhd_14783883	nhd_14783883.pretrain	1	1	quadro	120	NA	103
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_14783883.npz	100	50000	200	0	200	2_model/tmp/nhd_14783883/pretrain	2_model/tmp/nhd_14783883/train	nhd_14783883	nhd_14783883.train	1	1	quadro	120	NA	104
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2349188.npz	100	50000	200	0	200		2_model/tmp/nhd_2349188/pretrain	nhd_2349188	nhd_2349188.pretrain	1	1	quadro	120	NA	105
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2349188.npz	100	50000	200	0	200	2_model/tmp/nhd_2349188/pretrain	2_model/tmp/nhd_2349188/train	nhd_2349188	nhd_2349188.train	1	1	quadro	120	NA	106
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2349198.npz	100	50000	200	0	200		2_model/tmp/nhd_2349198/pretrain	nhd_2349198	nhd_2349198.pretrain	1	1	quadro	120	NA	107
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2349198.npz	100	50000	200	0	200	2_model/tmp/nhd_2349198/pretrain	2_model/tmp/nhd_2349198/train	nhd_2349198	nhd_2349198.train	1	1	quadro	120	NA	108
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2353946.npz	100	50000	200	0	200		2_model/tmp/nhd_2353946/pretrain	nhd_2353946	nhd_2353946.pretrain	1	1	quadro	120	NA	109
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2353946.npz	100	50000	200	0	200	2_model/tmp/nhd_2353946/pretrain	2_model/tmp/nhd_2353946/train	nhd_2353946	nhd_2353946.train	1	1	quadro	120	NA	110
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2384584.npz	100	50000	200	0	200		2_model/tmp/nhd_2384584/pretrain	nhd_2384584	nhd_2384584.pretrain	1	1	quadro	120	NA	111
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2384584.npz	100	50000	200	0	200	2_model/tmp/nhd_2384584/pretrain	2_model/tmp/nhd_2384584/train	nhd_2384584	nhd_2384584.train	1	1	quadro	120	NA	112
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2384766.npz	100	50000	200	0	200		2_model/tmp/nhd_2384766/pretrain	nhd_2384766	nhd_2384766.pretrain	1	1	quadro	120	NA	113
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2384766.npz	100	50000	200	0	200	2_model/tmp/nhd_2384766/pretrain	2_model/tmp/nhd_2384766/train	nhd_2384766	nhd_2384766.train	1	1	quadro	120	NA	114
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2385444.npz	100	50000	200	0	200		2_model/tmp/nhd_2385444/pretrain	nhd_2385444	nhd_2385444.pretrain	1	1	quadro	120	NA	115
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2385444.npz	100	50000	200	0	200	2_model/tmp/nhd_2385444/pretrain	2_model/tmp/nhd_2385444/train	nhd_2385444	nhd_2385444.train	1	1	quadro	120	NA	116
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2385496.npz	100	50000	200	0	200		2_model/tmp/nhd_2385496/pretrain	nhd_2385496	nhd_2385496.pretrain	1	1	quadro	120	NA	117
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2385496.npz	100	50000	200	0	200	2_model/tmp/nhd_2385496/pretrain	2_model/tmp/nhd_2385496/train	nhd_2385496	nhd_2385496.train	1	1	quadro	120	NA	118
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2385648.npz	100	50000	200	0	200		2_model/tmp/nhd_2385648/pretrain	nhd_2385648	nhd_2385648.pretrain	1	1	quadro	120	NA	119
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2385648.npz	100	50000	200	0	200	2_model/tmp/nhd_2385648/pretrain	2_model/tmp/nhd_2385648/train	nhd_2385648	nhd_2385648.train	1	1	quadro	120	NA	120
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2647582.npz	100	50000	200	0	200		2_model/tmp/nhd_2647582/pretrain	nhd_2647582	nhd_2647582.pretrain	1	1	quadro	120	NA	121
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2647582.npz	100	50000	200	0	200	2_model/tmp/nhd_2647582/pretrain	2_model/tmp/nhd_2647582/train	nhd_2647582	nhd_2647582.train	1	1	quadro	120	NA	122
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2648034.npz	100	50000	200	0	200		2_model/tmp/nhd_2648034/pretrain	nhd_2648034	nhd_2648034.pretrain	1	1	quadro	120	NA	123
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2648034.npz	100	50000	200	0	200	2_model/tmp/nhd_2648034/pretrain	2_model/tmp/nhd_2648034/train	nhd_2648034	nhd_2648034.train	1	1	quadro	120	NA	124
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2723765.npz	100	50000	200	0	200		2_model/tmp/nhd_2723765/pretrain	nhd_2723765	nhd_2723765.pretrain	1	1	quadro	120	NA	125
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2723765.npz	100	50000	200	0	200	2_model/tmp/nhd_2723765/pretrain	2_model/tmp/nhd_2723765/train	nhd_2723765	nhd_2723765.train	1	1	quadro	120	NA	126
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2723803.npz	100	50000	200	0	200		2_model/tmp/nhd_2723803/pretrain	nhd_2723803	nhd_2723803.pretrain	1	1	quadro	120	NA	127
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2723803.npz	100	50000	200	0	200	2_model/tmp/nhd_2723803/pretrain	2_model/tmp/nhd_2723803/train	nhd_2723803	nhd_2723803.train	1	1	quadro	120	NA	128
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2723871.npz	100	50000	200	0	200		2_model/tmp/nhd_2723871/pretrain	nhd_2723871	nhd_2723871.pretrain	1	1	quadro	120	NA	129
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_2723871.npz	100	50000	200	0	200	2_model/tmp/nhd_2723871/pretrain	2_model/tmp/nhd_2723871/train	nhd_2723871	nhd_2723871.train	1	1	quadro	120	NA	130
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_4250586.npz	100	50000	200	0	200		2_model/tmp/nhd_4250586/pretrain	nhd_4250586	nhd_4250586.pretrain	1	1	quadro	120	NA	131
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_4250586.npz	100	50000	200	0	200	2_model/tmp/nhd_4250586/pretrain	2_model/tmp/nhd_4250586/train	nhd_4250586	nhd_4250586.train	1	1	quadro	120	NA	132
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_4250588.npz	100	50000	200	0	200		2_model/tmp/nhd_4250588/pretrain	nhd_4250588	nhd_4250588.pretrain	1	1	quadro	120	NA	133
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_4250588.npz	100	50000	200	0	200	2_model/tmp/nhd_4250588/pretrain	2_model/tmp/nhd_4250588/train	nhd_4250588	nhd_4250588.train	1	1	quadro	120	NA	134
+pretrain	0.008	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_9022741.npz	100	50000	200	0	200		2_model/tmp/nhd_9022741/pretrain	nhd_9022741	nhd_9022741.pretrain	1	1	quadro	120	NA	135
+train	0.005	14	24	0	0	0	1_format/tmp/pgdl_inputs/nhd_9022741.npz	100	50000	200	0	200	2_model/tmp/nhd_9022741/pretrain	2_model/tmp/nhd_9022741/train	nhd_9022741	nhd_9022741.train	1	1	quadro	120	NA	136
