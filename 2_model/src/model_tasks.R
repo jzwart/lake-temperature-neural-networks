@@ -4,6 +4,7 @@ run_model_tasks <- function(ind_file, model_config_file, computer=c('slurm', 'pc
   library(drake) # the transform option requires devtools::install_github('ropensci/drake') as of 3/27/19
   source('2_model/src/run_job.R') # calls run_job.py
   library(dplyr)
+  library(readr)
   library(scipiper)
 
   if(computer == 'slurm') {
@@ -13,17 +14,11 @@ run_model_tasks <- function(ind_file, model_config_file, computer=c('slurm', 'pc
 
   # Convert task_id from character to symbol because otherwise drake will quote
   # with '.'s in the task names (which is ugly)
-  model_config <- readr::read_tsv(model_config_file, na='NA', col_types=cols(
-    .default = col_double(),
-    phase = col_character(),
-    data_file = col_character(),
-    restore_path = col_character(),
-    save_path = col_character(),
-    task_id = col_character(),
-    site_id = col_character(),
-    pgdl_inputs_md5 = col_character()
-  )) %>%
-    mutate(task_id = rlang::syms(task_id))
+  model_config <- readr::read_tsv(model_config_file, na='NA', col_types='cddddddcdddddccccddcccd') %>%
+    mutate(ncpus = 1, ngpus = 1, gpu.type = 'quadro', walltime = '120') %>%
+    tidyr::nest(ncpus, ngpus, gpu.type, walltime, .key = 'resources') %>%
+    # mutate(resources = lapply(resources, as.list)) %>%
+    mutate(task_sym = rlang::syms(task_id))
 
   # Create the drake task plan
   model_plan <- drake_plan(
@@ -42,14 +37,12 @@ run_model_tasks <- function(ind_file, model_config_file, computer=c('slurm', 'pc
         file_out(save_path) # the dir of the resulting model. drake says it handles whole directories, though I don't know how it behaves exactly
        )
       },
-      transform = map(.data = !!model_config, .id = c(task_id))
+      cfg.task_id = task_id, # drake won't allow task_id = task_id
+      transform = map(.data = !!model_config, .id = c(task_sym))
     )
-  )
-  model_plan$resources <- list(list(
-    ncpus = 1, # number of CPU cores per job. 1 is fine when using tensorflow-gpu
-    ngpus = 1, # number of GPU cores per job. Bump this above 1 when not testing
-    gpu.type = 'quadro', # quadro may be less busy; tesla is faster once running
-    walltime = '10')) # runtime in minutes, in minutes:seconds, or in hours:minutes:seconds
+  ) %>%
+    left_join(select(model_config, task_id, resources), by=c(cfg.task_id = 'task_id')) %>%
+    select(-cfg.task_id)
 
   print(model_plan)
 

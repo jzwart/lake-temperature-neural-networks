@@ -25,6 +25,6 @@ run_job <- function(config, ...) {
     pull(args)
 
   py_call <- sprintf('python 2_model/src/run_job.py %s', py_args)
-  print(py_call) # print() displays right away in the R console, whereas message() doesn't display until the model has run
+  cat(py_call) # print() displays right away in the R console, whereas message() doesn't display until the model has run
   system(py_call)
 }
