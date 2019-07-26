@@ -1,19 +1,3 @@
-#' Throws error "failed: No such file or directory...rsync failed with code 23:
-#' Partial transfer due to error" if any of the requested files are unavailable
-retrieve_lake_data <- function(out_ind, priority_lakes, file_column, yeti_path) {
-  # download the priority lake files from yeti, using the file info from
-  # priority_lakes
-  requested_files <- unique(priority_lakes[[file_column]])
-  dest_files <- yeti_get(
-    src_dir = yeti_path,
-    dest_dir = unique(dirname(requested_files)),
-    files = basename(requested_files))
-
-  # write a single yaml of all the file names and md5 hashes
-  sc_indicate(ind_file = out_ind, data_file = dest_files)
-}
-
-
 #' Uploads nearly model-read files (data split into phases and formatted as
 #' sequences) to Yeti for modeling
 #'
@@ -21,6 +5,11 @@ retrieve_lake_data <- function(out_ind, priority_lakes, file_column, yeti_path) 
 #' allowed any arguments other than ind_file and ...=list_of_files. But we need
 #' configuration information, so we'll scmake('pgdl_inputs_yeti_path') to get
 #' `yeti_path`.
+#' 
+#' Most combiners are many-to-one, but this one is many-via-one-to-many: many
+#' input files are transferred to the same number of input files on Yeti, but
+#' this happens within a single function call, and so a single indicator file
+#' is generated to represent the transfer of all of these files.
 #'
 #' @param ind_file the indicator file to write
 #' @param ... the file paths to upload
