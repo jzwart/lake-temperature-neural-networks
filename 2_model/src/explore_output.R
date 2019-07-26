@@ -1,3 +1,6 @@
+library(tidyverse)
+library(reticulate)
+
 save_paths <- unlist(lapply(dir('2_model/tmp/explore', full.names=TRUE), dir, pattern='^[[:alnum:]]+$', full.names=TRUE))
 
 extract_runtime <- function(save_paths) {
@@ -6,7 +9,7 @@ extract_runtime <- function(save_paths) {
   lapply(setNames(nm=save_paths), function(save_path) {
     files <- dir(save_path, full.names=TRUE)
     stats_file <- grep('stats', files, value=TRUE)
-    stats_npz <- np$load(stats_file)
+    stats_npz <- np$load(stats_file, allow_pickle=TRUE)
     tibble(
       save_path = save_path,
       runtime_mins = as.numeric(lubridate::hms(stats_npz$f[['run_time']][[1]]))/60
