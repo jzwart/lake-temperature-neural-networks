@@ -66,15 +66,15 @@ def train_tf_graph(
 
     with tf.Session() as sess:
 
+        # Initialize the weights and biases
+        sess.run(tf.global_variables_initializer())
+
         # If using pretrained model, reload it now
         if restore_path != '':
             latest_ckp = tf.train.latest_checkpoint(restore_path)
             #from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
             #print_tensors_in_checkpoint_file(latest_ckp, all_tensors=True, tensor_name='')
             saver.restore(sess, latest_ckp)
-
-        # Initialize the weights and biases
-        sess.run(tf.global_variables_initializer())
 
         for epoch in range(n_epochs):
 
