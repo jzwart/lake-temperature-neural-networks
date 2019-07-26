@@ -60,10 +60,13 @@ def train_tf_graph(
     saver = tf.train.Saver(max_to_keep=1) # tells tf to prepare to save the graph we've defined so far
 
     # Initialize arrays to hold the training progress information
+    n_depths, n_dates, n_seqs = (x_pred.shape[0], x_pred.shape[1], x_pred.shape[3]) # get some dimensions
+    n_preds_best = n_dates + (n_seqs - 1)*sequence_offset
     train_stat_names = ('loss_total', 'loss_RMSE', 'loss_EC', 'loss_L1') # 'loss_DD',
     train_stats = np.full((n_epochs, batches_per_epoch, len(train_stat_names)), np.nan, dtype=np.float64)
+    train_preds = np.full((n_epochs, n_depths, n_preds_best), np.nan, dtype=np.float64)
     test_loss_rmse = np.full((n_epochs), np.nan, dtype=np.float64)
-
+            
     with tf.Session() as sess:
 
         # Initialize the weights and biases
@@ -162,21 +165,22 @@ def train_tf_graph(
                 model_save_file = saver.save(sess, "%s/model" % save_path)
                 print("  Model state saved to %s.*" % model_save_file)
 
-            # Generate temperature predictions (prd) for the full dataset after last epoch
+            # Generate temperature predictions (prd) for the full dataset after each epoch
+            preds_raw = sess.run(pred, feed_dict = {x: x_pred_reshaped})
+            # Reshape the raw predictions into a single depth-by-time matrix of best predictions
+            start_best_dates = n_dates - sequence_offset # start index of the best preds in each sequence
+            preds_init = preds_raw[0:n_depths, 0:start_best_dates, 0] # the not-great but only-available initial preds
+            preds_last = preds_raw[0:(n_depths*n_seqs), start_best_dates:n_dates, 0] \
+                .reshape((n_seqs, n_depths, sequence_offset)) \
+                .transpose((1 ,0, 2)) \
+                .reshape(n_depths, sequence_offset * n_seqs) # the best preds from every sequence, reshaped into matrix
+            preds_best = np.concatenate((preds_init, preds_last), axis=1) # combo of init and last
+            train_preds[epoch, :] = preds_best # keep a record of the predictions at each timestep
+        
+            # Save the predictions at the end
             if epoch == n_epochs - 1:
-                preds_raw = sess.run(pred, feed_dict = {x: x_pred_reshaped})
-                # Reshape the raw predictions into a single depth-by-time matrix of best predictions
-                n_depths, n_dates, n_seqs = (x_pred.shape[0], x_pred.shape[1], x_pred.shape[3]) # get some dimensions
-                start_best_dates = n_dates - sequence_offset # start index of the best preds in each sequence
-                preds_init = preds_raw[0:n_depths, 0:start_best_dates, 0] # the not-great but only-available initial preds
-                preds_last = preds_raw[0:(n_depths*n_seqs), start_best_dates:n_dates, 0] \
-                    .reshape((n_seqs, n_depths, sequence_offset)) \
-                    .transpose((1 ,0, 2)) \
-                    .reshape(n_depths, sequence_offset * n_seqs) # the best preds from every sequence, reshaped into matrix
-                preds_best = np.concatenate((preds_init, preds_last), axis=1) # combo of init and last
-                # Save
                 pred_save_file = '%s/preds.npz' % save_path
-                np.savez_compressed(pred_save_file, preds_raw=preds_raw, preds_best=preds_best)
+                np.savez_compressed(pred_save_file, train_preds=train_preds, preds_best=preds_best)
                 print("  Predictions saved to %s" % pred_save_file)
 
     return(train_stats, test_loss_rmse, preds_best)
