@@ -37,10 +37,11 @@ def build_tf_graph(
     m = tf.placeholder("float", [None, n_steps])
 
     # Define LSTM cells
-    #lstm_cell = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias=1.0) # define a single LSTM cell
     lstm_cell = tf.nn.rnn_cell.LSTMCell(state_size, forget_bias=1.0, name='basic_lstm_cell') # define a single LSTM cell
+    #lstm_cell = tf.keras.layers.LSTMCell(state_size, name='basic_lstm_cell') # define a single LSTM cell
     # dynamic_rnn is faster for long timeseries, compared to tf.nn.static_rnn. the default namespace for tf.nn.dynamic_rnn in "rnn"; this becomes importatin in line 367
     state_series_x, current_state_x = tf.nn.dynamic_rnn(lstm_cell, x, dtype=tf.float32) # add multiple LSTM cells to the network. uses the dimensions of x to choose the dimensions of the LSTM network
+    #state_series_x, current_state_x = tf.keras.layers.RNN(lstm_cell) # add multiple LSTM cells to the network. uses the dimensions of x to choose the dimensions of the LSTM network
 
     # Output layer
     n_classes = 1 # Number of output values (probably 1 for a single depth-specific, time-specific prediction)
@@ -105,7 +106,7 @@ def build_tf_graph(
 
     # Regularization loss
     # select and compute L1 loss on the trainable weights. L1 because Jared has found it's better than L2,
-    # and weights not biases because it's often counterproductive to regularize weights
+    # and weights not biases because it's often counterproductive to regularize biases
     regularizable_variables = [tf.reshape(tf_var, [-1]) for tf_var in tf.trainable_variables() if not ('bias' in tf_var.name)]
     l1_loss = tf.reduce_sum(tf.abs(tf.concat(regularizable_variables, axis=0)))
 
@@ -113,9 +114,9 @@ def build_tf_graph(
     total_loss = rmse_loss + ec_lambda*ec_loss + l1_lambda*l1_loss # dd_lambda*(dd_loss + dd_loss_unsup)
 
     # Define the gradients and optimizer
-    tvars = tf.trainable_variables()
-    grads = tf.gradients(total_loss, tvars)
+    param = tf.trainable_variables()
+    grads = tf.gradients(total_loss, param)
     optimizer = tf.train.AdamOptimizer(learning_rate)
-    train_op = optimizer.apply_gradients(zip(grads, tvars))
+    train_op = optimizer.apply_gradients(zip(grads, param))
 
-    return(train_op, total_loss, rmse_loss, ec_loss, l1_loss, pred, x, y, m, unsup_inputs, unsup_phys_data)
+    return(train_op, total_loss, rmse_loss, ec_loss, l1_loss, param, pred, x, y, m, unsup_inputs, unsup_phys_data)

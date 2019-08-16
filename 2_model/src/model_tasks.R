@@ -14,7 +14,7 @@ run_model_tasks <- function(ind_file, model_config_file, computer=c('slurm', 'pc
 
   # Convert task_id from character to symbol because otherwise drake will quote
   # with '.'s in the task names (which is ugly)
-  model_config <- readr::read_tsv(model_config_file, na='NA', col_types='cddddddcdddddccccddcccd') %>%
+  model_config <- readr::read_tsv(model_config_file, na='NA', col_types='cddddddcdddddcccccddcccd') %>%
     mutate(ncpus = 1, ngpus = 1, gpu.type = 'quadro', walltime = '120') %>%
     tidyr::nest(ncpus, ngpus, gpu.type, walltime, .key = 'resources') %>%
     # mutate(resources = lapply(resources, as.list)) %>%

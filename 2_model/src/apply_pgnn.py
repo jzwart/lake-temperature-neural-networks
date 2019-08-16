@@ -28,6 +28,7 @@ def apply_pgnn(
         n_epochs = 2, # 200 is usually more than enough
         min_epochs_test = 0,
         min_epochs_save = 2, # later is recommended (runs quickest if ==n_epochs)
+        track_epoch_data = False, # False is faster, True is more interesting
         restore_path = '', #'2_model/out/EC_mille/pretrain',
         save_path = '2_model/tmp/nhd_1099476/pretrain'
         # TODO: should have L1 and L2 norm weights in this list, implemented in tf_graph
@@ -47,6 +48,7 @@ def apply_pgnn(
         n_epochs: Total number of epochs to run during training. Needs to be larger than the n epochs needed for the model to converge
         min_epochs_test: Minimum number of epochs to run through before computing test losses
         min_epochs_save: Minimum number of epochs to run through before considering saving a checkpoint (must be >= min_epochs_test)
+        track_epoch_data: Should predictions and trainable variables be stored for each epoch? If no, predictions will still be stored after the final epoch
         restore_path: Path to restore a model from, or ''
         save_path: Path (directory) to save a model to. Will always be saved as ('checkpoint_%s' %>% epoch)
     """
@@ -66,7 +68,7 @@ def apply_pgnn(
 
     # %% Build graph
     print('Building graph...')
-    train_op, total_loss, rmse_loss, ec_loss, l1_loss, pred, x, y, m, unsup_inputs, unsup_phys_data = tf_graph.build_tf_graph(
+    train_op, total_loss, rmse_loss, ec_loss, l1_loss, param, pred, x, y, m, unsup_inputs, unsup_phys_data = tf_graph.build_tf_graph(
             inputs['train.labels'].shape[1], inputs['train.features'].shape[2], state_size,
             inputs['unsup.physics'].shape[2], inputs['colnames.physics'], inputs['geometry'],
             ec_threshold, dd_lambda, ec_lambda, l1_lambda, seq_per_batch, learning_rate)
@@ -100,11 +102,11 @@ def apply_pgnn(
     else:
         print("Error: unrecognized phase '%s'"% phase)
 
-    train_stats, test_loss_rmse, preds = tf_train.train_tf_graph(
-            train_op, total_loss, rmse_loss, ec_loss, l1_loss, pred, x, y, m, unsup_inputs, unsup_phys_data,
+    train_stats, test_loss_rmse, params, preds = tf_train.train_tf_graph(
+            train_op, total_loss, rmse_loss, ec_loss, l1_loss, param, pred, x, y, m, unsup_inputs, unsup_phys_data,
             x_train, y_train, m_train, x_unsup, p_unsup, x_test, y_test, m_test, x_pred,
             sequence_offset=sequence_offset, seq_per_batch=seq_per_batch, n_epochs=n_epochs, min_epochs_test=min_epochs_test, min_epochs_save=min_epochs_save,
-            restore_path=restore_path, save_path=save_path)
+            track_epoch_data=track_epoch_data, restore_path=restore_path, save_path=save_path)
 
     # Track runtime, part 2
     end_time = dt.datetime.now()
@@ -116,7 +118,7 @@ def apply_pgnn(
                         start_time=start_time, end_time=end_time, run_time=run_time)
     print("  Diagnostics saved to %s" % stat_save_file)
 
-    return(train_stats, test_loss_rmse, preds)
+    return(train_stats, test_loss_rmse, params, preds)
     # %% Inspect predictions
 
     # prd has dimensions [depths*batches, n timesteps per batch, 1]

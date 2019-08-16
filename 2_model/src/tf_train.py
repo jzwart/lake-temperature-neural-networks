@@ -10,14 +10,14 @@ import numpy as np
 import tensorflow as tf
 
 def train_tf_graph(
-        train_op, total_loss, rmse_loss, ec_loss, l1_loss, pred, x, y, m, unsup_inputs, unsup_phys_data,
+        train_op, total_loss, rmse_loss, ec_loss, l1_loss, param, pred, x, y, m, unsup_inputs, unsup_phys_data,
         x_train, y_train, m_train, x_unsup, p_unsup, x_test, y_test, m_test, x_pred,
         sequence_offset, seq_per_batch, n_epochs=300, min_epochs_test=0, min_epochs_save=300,
-        restore_path='', save_path='./out/EC_mille/pretrain'):
+        track_epoch_data=False, restore_path='', save_path='./out/EC_mille/pretrain'):
     """Trains a tensorflow graph for the PRGNN model
 
     Args:
-        train_op, rmse_loss, ec_loss, l1_loss, pred, x, y, m, unsup_inputs, unsup_phys_data: tf tensors
+        train_op, rmse_loss, ec_loss, l1_loss, param, pred, x, y, m, unsup_inputs, unsup_phys_data: tf tensors
         x_train: Input data for supervised learning
         y_train: Observations for supervised learning
         m_train: Observation mask for supervised learning
@@ -32,6 +32,7 @@ def train_tf_graph(
         n_epochs: Total number of epochs to run during training. Needs to be larger than the n epochs needed for the model to converge
         min_epochs_test: Minimum number of epochs to run through before computing test losses
         min_epochs_save: Minimum number of epochs to run through before considering saving a checkpoint (must be >= min_epochs_test)
+        track_epoch_data: Should predictions and trainable variables be stored for each epoch? If no, predictions will still be stored after the final epoch
         restore_path: Path to restore a model from, or ''
         save_path: Path (directory) to save a model to. Will always be saved as ('checkpoint_%s' %>% epoch)
     """
@@ -39,7 +40,8 @@ def train_tf_graph(
     # Make sure the save path exists
     os.makedirs(save_path, exist_ok=True)
 
-    # Compute the number of sequences in each batch
+    # Compute the number of batches per epoch based on the specified number of
+    # sequences per batch. 'super' is for 'supervised'
     n_super_seqs = y_train.shape[2]
     batches_per_epoch = np.int(np.floor(n_super_seqs / seq_per_batch))
 
@@ -60,12 +62,27 @@ def train_tf_graph(
     saver = tf.train.Saver(max_to_keep=1) # tells tf to prepare to save the graph we've defined so far
 
     # Initialize arrays to hold the training progress information
-    n_depths, n_dates, n_seqs = (x_pred.shape[0], x_pred.shape[1], x_pred.shape[3]) # get some dimensions
+    n_depths, n_dates, n_drivers, n_seqs = x_pred.shape # get some dimensions
     n_preds_best = n_dates + (n_seqs - 1)*sequence_offset
     train_stat_names = ('loss_total', 'loss_RMSE', 'loss_EC', 'loss_L1') # 'loss_DD',
     train_stats = np.full((n_epochs, batches_per_epoch, len(train_stat_names)), np.nan, dtype=np.float64)
-    train_preds = np.full((n_epochs, n_depths, n_preds_best), np.nan, dtype=np.float64)
     test_loss_rmse = np.full((n_epochs), np.nan, dtype=np.float64)
+    if track_epoch_data:
+        train_preds = np.full((n_epochs+1, n_depths, n_preds_best), np.nan, dtype=np.float64)
+        # make sure we understand the dimensions of the parameter matrices
+        train_param_shapes = [tf.keras.backend.int_shape(p) for p in param] # here's what tf says the dimensions are
+        n_hidden_states = tf.keras.backend.int_shape(param[2])[0] # the simplest place to get state_size is from param
+        n_lstm_gates = 4
+        assert(train_param_shapes[0] == (n_drivers + n_hidden_states, n_hidden_states * n_lstm_gates))
+        assert(train_param_shapes[1] == (n_hidden_states * n_lstm_gates, ))
+        assert(train_param_shapes[2] == (n_hidden_states, 1))
+        assert(train_param_shapes[3] == (1, ))
+        # create a list with one big array for each of the parameter matrices, to be stacked by epoch
+        train_params = {
+            'lstm_weights': np.full((n_epochs+1, ) + train_param_shapes[0], np.nan, dtype=np.float64),
+            'lstm_biases':  np.full((n_epochs+1, ) + train_param_shapes[1], np.nan, dtype=np.float64),
+            'pred_weights': np.full((n_epochs+1, ) + train_param_shapes[2], np.nan, dtype=np.float64),
+            'pred_biases':  np.full((n_epochs+1, ) + train_param_shapes[3], np.nan, dtype=np.float64)}
             
     with tf.Session() as sess:
 
@@ -78,6 +95,27 @@ def train_tf_graph(
             #from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
             #print_tensors_in_checkpoint_file(latest_ckp, all_tensors=True, tensor_name='')
             saver.restore(sess, latest_ckp)
+
+        # Store the pre-training predictions and parameters
+        if track_epoch_data:
+                # Generate temperature predictions for the full dataset.
+                # Also pull the weights and biases (parameters)
+                params, preds_raw = sess.run([param, pred], feed_dict = {x: x_pred_reshaped})
+                # Reshape the raw predictions into a single depth-by-time matrix of best predictions
+                start_best_dates = n_dates - sequence_offset # start index of the best preds in each sequence
+                preds_init = preds_raw[0:n_depths, 0:start_best_dates, 0] # the not-great but only-available initial preds
+                preds_last = preds_raw[0:(n_depths*n_seqs), start_best_dates:n_dates, 0] \
+                    .reshape((n_seqs, n_depths, sequence_offset)) \
+                    .transpose((1 ,0, 2)) \
+                    .reshape(n_depths, sequence_offset * n_seqs) # the best preds from every sequence, reshaped into matrix
+                preds_best = np.concatenate((preds_init, preds_last), axis=1) # combo of init and last
+                # If requested, keep a record of the parameters and predictions at each training timestep (epoch)
+                if track_epoch_data:
+                    train_preds[0, :] = preds_best
+                    train_params['lstm_weights'][0, :] = params[0]
+                    train_params['lstm_biases' ][0, :] = params[1]
+                    train_params['pred_weights'][0, :] = params[2]
+                    train_params['pred_biases' ][0, :] = params[3]
 
         for epoch in range(n_epochs):
 
@@ -165,22 +203,39 @@ def train_tf_graph(
                 model_save_file = saver.save(sess, "%s/model" % save_path)
                 print("  Model state saved to %s.*" % model_save_file)
 
-            # Generate temperature predictions (prd) for the full dataset after each epoch
-            preds_raw = sess.run(pred, feed_dict = {x: x_pred_reshaped})
-            # Reshape the raw predictions into a single depth-by-time matrix of best predictions
-            start_best_dates = n_dates - sequence_offset # start index of the best preds in each sequence
-            preds_init = preds_raw[0:n_depths, 0:start_best_dates, 0] # the not-great but only-available initial preds
-            preds_last = preds_raw[0:(n_depths*n_seqs), start_best_dates:n_dates, 0] \
-                .reshape((n_seqs, n_depths, sequence_offset)) \
-                .transpose((1 ,0, 2)) \
-                .reshape(n_depths, sequence_offset * n_seqs) # the best preds from every sequence, reshaped into matrix
-            preds_best = np.concatenate((preds_init, preds_last), axis=1) # combo of init and last
-            train_preds[epoch, :] = preds_best # keep a record of the predictions at each timestep
-        
+            if track_epoch_data or (epoch == n_epochs - 1):
+                # Generate temperature predictions for the full dataset.
+                # Also pull the weights and biases (parameters)
+                params, preds_raw = sess.run([param, pred], feed_dict = {x: x_pred_reshaped})
+                # Reshape the raw predictions into a single depth-by-time matrix of best predictions
+                start_best_dates = n_dates - sequence_offset # start index of the best preds in each sequence
+                preds_init = preds_raw[0:n_depths, 0:start_best_dates, 0] # the not-great but only-available initial preds
+                preds_last = preds_raw[0:(n_depths*n_seqs), start_best_dates:n_dates, 0] \
+                    .reshape((n_seqs, n_depths, sequence_offset)) \
+                    .transpose((1 ,0, 2)) \
+                    .reshape(n_depths, sequence_offset * n_seqs) # the best preds from every sequence, reshaped into matrix
+                preds_best = np.concatenate((preds_init, preds_last), axis=1) # combo of init and last
+                # If requested, keep a record of the parameters and predictions at each training timestep (epoch)
+                if track_epoch_data:
+                    train_preds[epoch+1, :] = preds_best
+                    train_params['lstm_weights'][epoch+1, :] = params[0]
+                    train_params['lstm_biases' ][epoch+1, :] = params[1]
+                    train_params['pred_weights'][epoch+1, :] = params[2]
+                    train_params['pred_biases' ][epoch+1, :] = params[3]
+                    
             # Save the predictions at the end
             if epoch == n_epochs - 1:
                 pred_save_file = '%s/preds.npz' % save_path
-                np.savez_compressed(pred_save_file, train_preds=train_preds, preds_best=preds_best)
+                param_save_file = '%s/params.npz' % save_path
+                # track_epoch_data determines whether we save the record of preds & params at each epoch or just the last epoch
+                if track_epoch_data:
+                    np.savez_compressed(pred_save_file, train_preds=train_preds, preds_best=preds_best)
+                    np.savez_compressed(param_save_file, train_params=train_params, params=params)
+                else:
+                    np.savez_compressed(pred_save_file, preds_best=preds_best)
+                    np.savez_compressed(param_save_file, params=params)
                 print("  Predictions saved to %s" % pred_save_file)
+                print("  Weights and biases saved to %s" % param_save_file)
 
-    return(train_stats, test_loss_rmse, preds_best)
+    # Return train and test statistics for all epochs, and final values for params and best predictions
+    return(train_stats, test_loss_rmse, params, preds_best)
