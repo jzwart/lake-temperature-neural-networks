@@ -372,7 +372,7 @@ combine_animation_frames <- function(png_files, gif_file, min_delay_cs=10, max_d
   # frame individually. frame_nums is converted from 1-indexed to 0-indexed
   format_decaying_delays <- function(min_delay_cs=10, max_delay_cs=30, decay_exp=0.9, frame_nums) {
     delays <- pmax(round(min_delay_cs + (max_delay_cs-min_delay_cs)*seq_len(length(frame_nums))^-decay_exp), 1)
-    sprintf('-d%s "#%s"', delays, frame_nums-1) %>%
+    sprintf('-d%s "#%s"', delays, frame_nums) %>%
       paste(collapse=' ')
   }
   seq_pretrain <- as.integer(gsub('pretrain_ep', '', tools::file_path_sans_ext(basename(grep('/pretrain', png_files, value=TRUE)))))
