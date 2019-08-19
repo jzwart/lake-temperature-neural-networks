@@ -18,6 +18,7 @@ run_job <- function(config, ...) {
       '--n_epochs=%d' = n_epochs,
       '--min_epochs_test=%d' = min_epochs_test,
       '--min_epochs_save=%d' = min_epochs_save,
+      '--track_epoch_data=%s' = ifelse(track_epoch_data, 'True', 'False'),
       '--restore_path="%s"' = restore_path,
       '--save_path="%s"' = save_path,
       sep=' '

@@ -23,6 +23,7 @@ parser.add_argument('--max_batch_obs')
 parser.add_argument('--n_epochs')
 parser.add_argument('--min_epochs_test')
 parser.add_argument('--min_epochs_save')
+parser.add_argument('--track_epoch_data')
 parser.add_argument('--restore_path')
 parser.add_argument('--save_path')
 args = parser.parse_args()
@@ -44,6 +45,7 @@ apply_pgnn.apply_pgnn(
         n_epochs = int(args.n_epochs),
         min_epochs_test = int(args.min_epochs_test),
         min_epochs_save = int(args.min_epochs_save),
+        track_epoch_data = bool(args.track_epoch_data),
         restore_path = args.restore_path,
         save_path = args.save_path
 )

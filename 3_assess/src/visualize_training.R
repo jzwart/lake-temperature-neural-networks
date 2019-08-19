@@ -1,14 +1,17 @@
-# gif and png visualizations of PGDL training process for Jordan's CUAHSI 2019
-# poster (with iPad)
+# This file creates gif and png visualizations of the PGDL training process for
+# the training of a single model.
+
+# The script is currently set up to be run interactively rather than with
+# scipiper. Edit the directory paths to point to the project of interest.
 
 library(tidyverse)
-
-#### DATA PREP ####
 library(scipiper)
 library(reticulate)
 np <- import("numpy")
 
-lake_dirs <- dir('2_model/tmp/cuahsi19/', full.names = TRUE)
+#### DATA PREP ####
+
+lake_dirs <- dir('tmp/190814_WMA_TED_Talk/2_model/tmp/', full.names = TRUE)
 
 label_lake_files <- function(lake_path=lake_dirs[1]) {
   lake_id <- basename(lake_path)
@@ -20,7 +23,8 @@ label_lake_files <- function(lake_path=lake_dirs[1]) {
     output = lapply(setNames(nm=c('pretrain', 'train')), function(job_phase) {
       job_path <- file.path(lake_path, job_phase)
       job_files <- dir(job_path, full.names=TRUE)
-      list(preds = grep('preds', job_files, value=TRUE),
+      list(params = grep('params', job_files, value=TRUE),
+           preds = grep('preds', job_files, value=TRUE),
            stats = grep('stats', job_files, value=TRUE))
     })
   )
@@ -49,14 +53,13 @@ extract_preds <- function(lake_files) {
     message('  Opening predictions file...')
     preds_npz <- np$load(preds_file, allow_pickle=TRUE)
     preds_array <- preds_npz$f[["train_preds"]]
-    epochs <- seq_len(dim(preds_array)[1])
+    epochs <- seq_len(dim(preds_array)[1]) - 1
     message('  Extracting by epoch...')
     pred_sets <- epochs %>% {setNames(., nm=sprintf('%s_ep%03d', job_phase, .))}
-    # pred_sets <- seq(1,91,by=10) %>% {setNames(., nm=sprintf('%s_ep%03d', job_phase, .))}
     preds_list <- lapply(seq_along(pred_sets), function(set) {
       epoch <- pred_sets[set]
       if(epoch %% 10 == 0) message(if(epoch %% 100 == 0) epoch else '*', appendLF=FALSE)
-      preds_mat <- preds_array[epoch, , ]
+      preds_mat <- preds_array[epoch+1, , ]
       rownames(preds_mat) <- dims$depths
       preds_df <- preds_mat %>%
         t() %>%
@@ -76,7 +79,7 @@ extract_preds <- function(lake_files) {
   return(big_preds)
 }
 preds <- extract_preds(lake_files)
-saveRDS(preds, '3_assess/tmp/preds.rds')
+saveRDS(preds, 'tmp/190814_WMA_TED_Talk/3_assess/tmp/preds.rds')
 
 extract_obs <- function(lake_files, phase='pretrain') {
   inputs <- scmake(lake_files$input$R_object, '1_format_tasks.yml')
@@ -92,9 +95,9 @@ extract_obs <- function(lake_files, phase='pretrain') {
     distinct()
 }
 glm <- extract_obs(lake_files, phase='pretrain')
-saveRDS(glm, '3_assess/tmp/glm.rds')
+saveRDS(glm, 'tmp/190814_WMA_TED_Talk/3_assess/tmp/glm.rds')
 obs <- extract_obs(lake_files, phase='train')
-saveRDS(obs, '3_assess/tmp/obs.rds')
+saveRDS(obs, 'tmp/190814_WMA_TED_Talk/3_assess/tmp/obs.rds')
 
 extract_stats <- function(lake_files) {
   bind_rows(lapply(names(lake_files$output), function(job_phase) {
@@ -122,15 +125,121 @@ extract_stats <- function(lake_files) {
       era = ceiling(10 * iter / max(iter)) # break iterations into "eras" of 1 through 10
     )
 }
-train_stats_df <- extract_stats(lake_files)
-saveRDS(train_stats_df, '3_assess/tmp/stats.rds')
+train_stats <- extract_stats(lake_files)
+saveRDS(train_stats, 'tmp/190814_WMA_TED_Talk/3_assess/tmp/stats.rds')
 
-#### PLOTS ####
+extract_params <- function(lake_files) {
+  lapply(setNames(nm=names(lake_files$output)), function(job_phase) {
+    params_file <- lake_files$output[[job_phase]][['params']]
+    params_npz <- np$load(params_file, allow_pickle=TRUE)
+    params_list <- params_npz$f[['train_params']][[1]]
+  })
+}
+params <- extract_params(lake_files)
+saveRDS(params, 'tmp/190814_WMA_TED_Talk/3_assess/tmp/params.rds')
+
+
+#### ANIMATION FRAMES ####
+
 # reload data prepped above
-preds <- readRDS('3_assess/tmp/preds.rds')
-glm <- readRDS('3_assess/tmp/glm.rds')
-obs <- readRDS('3_assess/tmp/obs.rds')
-train_stats_df <- readRDS('3_assess/tmp/stats.rds')
+preds <- readRDS('tmp/190814_WMA_TED_Talk/3_assess/tmp/preds.rds')
+glm <- readRDS('tmp/190814_WMA_TED_Talk/3_assess/tmp/glm.rds')
+obs <- readRDS('tmp/190814_WMA_TED_Talk/3_assess/tmp/obs.rds')
+params <- readRDS('tmp/190814_WMA_TED_Talk/3_assess/tmp/params.rds')
+
+plot_params <- function(params, frame='pretrain_ep001', clims=c(-1,1), save_dir) {
+  # parse the frame name
+  phase <- strsplit(frame, '_', fixed=TRUE)[[1]][[1]]
+  epoch <- as.integer(gsub('ep', '', strsplit(frame, '_', fixed=TRUE)[[1]][[2]]))
+  plot_title <- sprintf('%s%sing Epoch %d', toupper(substr(phase, 1, 1)), substring(phase, 2), epoch)
+  params_list <- params[[phase]]
+
+  # determine the dimensions of the params matrix "parmat" (which will have a
+  # gap between each set of parameters)
+  gapsize <- 1
+  biases_per_node <- 1
+  n_gates <- 4
+  n_hidden_states <- dim(params_list$lstm_weights)[3] / n_gates
+  n_drivers <- dim(params_list$lstm_weights)[2] - n_hidden_states
+  parmat_width <- dim(params_list$lstm_weights)[3] + gapsize + dim(params_list$pred_weights)[3]
+  parmat_height <- dim(params_list$lstm_weights)[2] + gapsize + biases_per_node
+
+  # get the data for this plot
+  parmat <- matrix(NA, nrow=parmat_height, ncol=parmat_width)
+  # put the lstm_weights in the top left
+  parmat[1:dim(params_list$lstm_weights)[2], 1:dim(params_list$lstm_weights)[3]] <- params_list$lstm_weights[epoch+1,,]
+  # put the lstm_biases in the bottom left
+  parmat[parmat_height, 1:dim(params_list$lstm_biases)[2]] <- params_list$lstm_biases[epoch+1,]
+  # put the pred_weights in the middle right
+  parmat[(1 + dim(params_list$lstm_weights)[2] - dim(params_list$pred_weights)[2]):dim(params_list$lstm_weights)[2], parmat_width] <-
+    params_list$pred_weights[epoch+1,,]
+  # put the pred_biases in the bottom right
+  parmat[parmat_height, parmat_width] <- params_list$pred_biases[epoch+1]
+
+  # melt the parameter matrix into a tidy tibble
+  dimnames(parmat) <- list(as.character(seq_len(dim(parmat)[1])), sprintf('C%d', seq_len(dim(parmat)[2])))
+  parmelt <- parmat %>%
+    as_tibble() %>%
+    mutate(row=as.integer(rownames(parmat))) %>%
+    tidyr::gather(col, value, -row) %>%
+    mutate(col=as.integer(gsub('C', '', col)))
+
+  # make the geom_tile plot
+  base_size <- 9
+  g <- ggplot(parmelt, aes(x=col, y=row)) +
+    geom_tile(aes(fill = value), colour = NA) +
+    scale_fill_gradient2(
+      '', breaks=c(clims[1], 0, clims[2]), labels=c('Low', '0', 'High'),
+      low = "midnightblue", mid = "gray95", high = "darkred", midpoint = 0, na.value = 'white', lim=clims) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks=c( n_hidden_states/2+n_hidden_states*(0:3), parmat_width),
+      labels=c('Input Gate', 'New Input Gate', 'Forget Gate', 'Output Gate', 'Prediction')) +
+    scale_y_reverse(
+      expand = c(0, 0),
+      breaks=c(n_drivers/2, n_drivers+n_hidden_states/2, parmat_height),
+      labels=c('Driver\nWeights', 'Hidden\nState\nWeights', 'Biases')) +
+    coord_fixed() +
+    labs(x = "", y = "") +
+    theme_grey(base_size = base_size) +
+    theme(
+      legend.position = 'bottom',
+      legend.key.width = unit(0.6, units='inches'),
+      legend.key.height = unit(0.08, units='inches'),
+      axis.ticks = element_blank(),
+      plot.margin = margin(r=25)) +
+    geom_vline(xintercept=dim(params_list$lstm_weights)[3] * (1:4)/4 + 0.5, color='white') +
+    geom_hline(yintercept=dim(params_list$lstm_weights)[2]-dim(params_list$pred_weights)[2] + 0.5, color='white') +
+    ggtitle(plot_title)
+
+  # Save if requested
+  if(!missing(save_dir)) {
+    if(!dir.exists(save_dir)) dir.create(save_dir, recursive=TRUE)
+    ggsave(file.path(save_dir, sprintf('%s.png', frame)), plot=g, height=3.5, width=6)
+  }
+
+  return(g)
+}
+# # tests
+# maxes <- list(
+#   lstm_weights = max(abs(c(params[[1]]$lstm_weights, params[[2]]$lstm_weights))),
+#   lstm_biases  = max(abs(c(params[[1]]$lstm_biases,  params[[2]]$lstm_biases ))),
+#   pred_weights = max(abs(c(params[[1]]$pred_weights, params[[2]]$pred_weights))),
+#   pred_biases  = max(abs(c(params[[1]]$pred_biases,  params[[2]]$pred_biases ))))
+# params_norm <- lapply(params, function(params_list) {
+#   list(
+#     lstm_weights = params_list$lstm_weights / maxes$lstm_weights,
+#     lstm_biases = params_list$lstm_biases / maxes$lstm_biases,
+#     pred_weights = params_list$pred_weights / maxes$pred_weights,
+#     pred_biases = params_list$pred_biases / maxes$pred_biases)
+# })
+# clims <- c(-1,1)*max(abs(range(c(params_norm[['pretrain']]$lstm_weights, params_norm[['train']]$lstm_weights))))
+# plot_params(params_norm, frame='pretrain_ep000', clims=clims)
+# plot_params(params_norm, frame='pretrain_ep050', clims=clims)
+# plot_params(params_norm, frame='pretrain_ep100', clims=clims)
+# plot_params(params_norm, frame='train_ep000', clims=clims)
+# plot_params(params_norm, frame='train_ep050', clims=clims)
+# plot_params(params_norm, frame='train_ep100', clims=clims)
 
 plot_preds <- function(pred_df, glm_df, obs_df, frame='pretrain_ep001', ylims, save_dir) {
   # parse the frame name
@@ -157,21 +266,59 @@ plot_preds <- function(pred_df, glm_df, obs_df, frame='pretrain_ep001', ylims, s
   # return the plot for previewing
   return(g)
 }
-pred_df <- preds[c('date','depth_m','pretrain_ep011')] %>% filter(
-  dplyr::between(date, as.Date('2013-01-01'), as.Date('2014-12-31')),
-  depth_m %% 2 == 0) %>%
-  rename(temp_C = pretrain_ep011)
-glm_df <- glm %>% filter(
-  dplyr::between(date, as.Date('2013-01-01'), as.Date('2014-12-31')),
-  depth_m %% 2 == 0)
-obs_df <- obs %>% filter(
-  dplyr::between(date, as.Date('2013-01-01'), as.Date('2014-12-31')),
-  depth_m %% 2 == 0)
-plot_preds(pred_df, glm_df, obs_df, frame='pretrain_ep011', ylims=c(0,25))
+# # tests
+# pred_df <- preds[c('date','depth_m','pretrain_ep011')] %>% filter(
+#   dplyr::between(date, as.Date('2013-01-01'), as.Date('2014-12-31')),
+#   depth_m %% 2 == 0) %>%
+#   rename(temp_C = pretrain_ep011)
+# glm_df <- glm %>% filter(
+#   dplyr::between(date, as.Date('2013-01-01'), as.Date('2014-12-31')),
+#   depth_m %% 2 == 0)
+# obs_df <- obs %>% filter(
+#   dplyr::between(date, as.Date('2013-01-01'), as.Date('2014-12-31')),
+#   depth_m %% 2 == 0)
+# plot_preds(pred_df, glm_df, obs_df, frame='pretrain_ep011', ylims=c(0,25))
 
-#### ANIMATION ####
 
-create_animation_frames <- function(preds, glm, obs, save_dir='3_assess/tmp/png') {
+#### ANIMATION GIFS ####
+
+create_param_animation_frames <- function(params, save_dir='tmp/190814_WMA_TED_Talk/3_assess/tmp/params/png') {
+  # normalize weights in each matrix so they range from -1 to 1 within that
+  # matrix over both phases and all epochs
+  maxes <- list(
+    lstm_weights = max(abs(c(params[[1]]$lstm_weights, params[[2]]$lstm_weights))),
+    lstm_biases  = max(abs(c(params[[1]]$lstm_biases,  params[[2]]$lstm_biases ))),
+    pred_weights = max(abs(c(params[[1]]$pred_weights, params[[2]]$pred_weights))),
+    pred_biases  = max(abs(c(params[[1]]$pred_biases,  params[[2]]$pred_biases ))))
+  params_norm <- lapply(params, function(params_list) {
+    list(
+      lstm_weights = params_list$lstm_weights / maxes$lstm_weights,
+      lstm_biases = params_list$lstm_biases / maxes$lstm_biases,
+      pred_weights = params_list$pred_weights / maxes$pred_weights,
+      pred_biases = params_list$pred_biases / maxes$pred_biases)
+  })
+
+  # Set color limits for this animation: we know they're (-1, 1) because of the
+  # normalization above
+  clims <- c(-1,1)
+
+  # Create and save the animation frames
+  n_epochs <- lapply(params_norm, function(params_list) dim(params_list$lstm_weights)[1] ) # includes the 0 epoch (before any training)
+  frame_names <- unlist(lapply(names(n_epochs), function(phase) {
+    sprintf('%s_ep%03d', rep(phase, times=n_epochs[[phase]]), seq_len(n_epochs[[phase]]) - 1)
+  }))
+  if(!dir.exists(save_dir)) dir.create(save_dir, recursive=TRUE)
+  lapply(frame_names, function(frame_name) {
+    message(frame_name)
+    plot_params(params_norm, frame=frame_name, clims=clims, save_dir=save_dir);
+  })
+
+  invisible()
+}
+create_param_animation_frames(params, 'tmp/190814_WMA_TED_Talk/3_assess/tmp/params/png')
+
+
+create_pred_animation_frames <- function(preds, glm, obs, save_dir) {
   # Filter all of the observations and predictions to smaller values
   filter_for_plot <- function(df) {
     df %>% filter(
@@ -205,15 +352,13 @@ create_animation_frames <- function(preds, glm, obs, save_dir='3_assess/tmp/png'
 
   invisible()
 }
-create_animation_frames(preds, glm, obs)
+create_pred_animation_frames(preds, glm, obs, save_dir='tmp/190814_WMA_TED_Talk/3_assess/tmp/preds/png')
 
-combine_animation_frames <- function(
-  png_files=dir('3_assess/tmp/png', pattern='png', full.names=TRUE),
-  gif_file='3_assess/tmp/training_preds.gif',
-  min_delay_cs=10, max_delay_cs=200, decay_exp=0.9) {
+
+combine_animation_frames <- function(png_files, gif_file, min_delay_cs=10, max_delay_cs=200, decay_exp=0.9) {
 
   # run imageMagick convert to build a gif
-  tmp_dir <- file.path(dirname(gif_file), 'magick')
+  tmp_dir <- file.path(dirname(unique(dirname(png_files))), 'magick')
   if(!dir.exists(tmp_dir)) dir.create(tmp_dir)
   magick_command <- sprintf(
     'convert -define registry:temporary-path=%s -limit memory 24GiB -delay %d -loop 0 %s %s',
@@ -227,11 +372,11 @@ combine_animation_frames <- function(
   # frame individually. frame_nums is converted from 1-indexed to 0-indexed
   format_decaying_delays <- function(min_delay_cs=10, max_delay_cs=30, decay_exp=0.9, frame_nums) {
     delays <- pmax(round(min_delay_cs + (max_delay_cs-min_delay_cs)*seq_len(length(frame_nums))^-decay_exp), 1)
-    sprintf('-d%s "#%s"', delays, frame_nums-1) %>%
+    sprintf('-d%s "#%s"', delays, frame_nums) %>%
       paste(collapse=' ')
   }
   seq_pretrain <- as.integer(gsub('pretrain_ep', '', tools::file_path_sans_ext(basename(grep('/pretrain', png_files, value=TRUE)))))
-  seq_train <- max(seq_pretrain) + as.integer(gsub('train_ep', '', tools::file_path_sans_ext(basename(grep('/train', png_files, value=TRUE)))))
+  seq_train <- length(seq_pretrain) + as.integer(gsub('train_ep', '', tools::file_path_sans_ext(basename(grep('/train', png_files, value=TRUE)))))
   delay_string_p1 <- format_decaying_delays(min_delay_cs, max_delay_cs, decay_exp, seq_pretrain[-(-2:0 + length(seq_pretrain))])
   delay_string_p2 <- format_decaying_delays(max_delay_cs/2, max_delay_cs/2, decay_exp=1, seq_pretrain[-2:0 + length(seq_pretrain)])
   delay_string_t1 <- format_decaying_delays(min_delay_cs, max_delay_cs, decay_exp, seq_train[-(-2:0 + length(seq_train))])
@@ -239,19 +384,28 @@ combine_animation_frames <- function(
   delay_string <- paste(delay_string_p1, delay_string_p2, delay_string_t1, delay_string_t2)
 
   # simplify the gif with gifsicle - cuts size by about 50%
-  # for now, at least, --colors 256 does nothing
-  gifsicle_command <- sprintf('gifsicle -b -O3 %s %s', gif_file, delay_string)
+  # for predictions, --colors 256 does nothing, but it's useful for params
+  gifsicle_command <- ifelse(
+    grepl('params', gif_file),
+    sprintf('gifsicle --colors 256 -b -O3 %s %s', gif_file, delay_string),
+    sprintf('gifsicle -b -O3 %s %s', gif_file, delay_string))
   system(gifsicle_command)
 }
 combine_animation_frames(
-  png_files=dir('3_assess/tmp/png', pattern='png', full.names=TRUE),
-  gif_file='3_assess/tmp/training_preds.gif',
+  png_files=dir('tmp/190814_WMA_TED_Talk/3_assess/tmp/params/png', pattern='png', full.names=TRUE),
+  gif_file='tmp/190814_WMA_TED_Talk/3_assess/tmp/training_params.gif',
+  min_delay_cs=10, max_delay_cs=200, decay_exp=0.9)
+combine_animation_frames(
+  png_files=dir('tmp/190814_WMA_TED_Talk/3_assess/tmp/preds/png', pattern='png', full.names=TRUE),
+  gif_file='tmp/190814_WMA_TED_Talk/3_assess/tmp/training_preds.gif',
   min_delay_cs=10, max_delay_cs=200, decay_exp=0.9)
 
-#### REFERENCE CODE ####
+#### MODEL DIAGNOSTICS PLOTS ####
 
-plot_train_stats <- function(train_stats_df, lake_id) {
-  g <- train_stats_df %>%
+train_stats <- readRDS('tmp/190814_WMA_TED_Talk/3_assess/tmp/stats.rds')
+
+plot_train_stats <- function(train_stats, lake_id, save_path) {
+  g <- train_stats %>%
     filter(!is.na(loss)) %>%
     ggplot(aes(x=iter, y=loss, color=phase, group=phase)) +
     geom_line() +
@@ -261,38 +415,7 @@ plot_train_stats <- function(train_stats_df, lake_id) {
     ggtitle(sprintf('Loss components for Trout Lake, WI (%s)', lake_id)) +
     theme_bw() +
     theme(plot.title=element_text(size=9))
-  ggsave('3_assess/tmp/losses.png', g, width=7, height=6)
+  ggsave(file.path(save_path, 'losses.png'), g, width=7, height=6)
 
 }
-plot_train_stats(train_stats_df, lake_files$lake_id)
-
-# ggplot(plot_dat, aes(x = doy, y = value)) +
-#   geom_line(aes(group = depth_bin, color = depth_bin), alpha = 0.7, size = 1.1) +
-#   geom_point(aes(group = depth_bin, color = depth_bin),
-#              alpha = 0.7, size = 0.9, fill = 'white') +
-#   geom_point(data = plot_dat, aes(x = doy, y = source_obs), shape = '|', color = 'darkgray', size = 2) +
-#   geom_hline(data = dummy_hline, aes(yintercept = int), linetype = 2) +
-#   viridis::scale_color_viridis(discrete = TRUE, direction = -1) + #, palette = 'RdYlBu'
-#   #scale_shape_manual(values = c(21, 22, 23)) +
-#   scale_x_continuous(breaks = date_breaks,
-#                      labels = date_labels, limits = c(min(plot_dat$doy, na.rm = TRUE)-5, max(plot_dat$doy, na.rm = TRUE)+5))+
-#   #facet_wrap(Depth_cat~year, ncol = 3, scales = 'free_y') +
-#   facet_grid(rows = vars(variable),  scales = 'free_y') +
-#   coord_cartesian(xlim = c(min_date-5, max_date+5)) +
-#   theme_bw()+
-#   theme(#strip.text = element_blank(),
-#     strip.background = element_blank(),
-#     legend.position = 'right',
-#     legend.direction="horizontal",
-#     legend.key.size = unit(1.5, 'lines'),
-#     panel.grid = element_blank(),
-#     legend.background = element_rect(fill = 'transparent', color = NA),
-#     legend.box.background = element_rect(color = NA),
-#     panel.spacing = unit(0.8, 'lines'),
-#     legend.spacing.y = unit(2, 'lines'),
-#     text = element_text(size = 24),
-#     axis.text.y = element_text(size = 18)
-#   ) +
-#   labs( y = 'Observed Temperature or Bias (deg C)', x = '', title = paste0(target_name, ', ', top_year)) +
-#   guides(color = guide_legend(title = 'Depth (m)', title.position = 'top', ncol = 1,
-#                               label.position = 'left', direction = "vertical"))
+plot_train_stats(train_stats, lake_files$lake_id, save_path='tmp/190814_WMA_TED_Talk/3_assess/tmp')

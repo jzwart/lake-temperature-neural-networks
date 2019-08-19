@@ -25,6 +25,7 @@ create_model_config <- function(
     n_epochs = 0,
     min_epochs_test = 0,
     min_epochs_save = 0,
+    track_epoch_data = FALSE,
     restore_path = '',
     save_path = '',
     site_id = '',
@@ -56,6 +57,7 @@ create_model_config <- function(
         n_epochs = 100,
         min_epochs_test = 0,
         min_epochs_save = n_epochs,
+        track_epoch_data = FALSE,
         restore_path = '',
         ncpus = 1, # number of CPU cores per job. 1 is fine when using tensorflow-gpu
         ngpus = 1, # number of GPU cards per job. I don't think we can make good use of more than 1
@@ -98,6 +100,7 @@ create_model_config <- function(
         n_epochs = 200, # tests on 190404 suggest that 100 may be nearly enough, so 200 would probably guarantee convergence
         min_epochs_test = 0,
         min_epochs_save = n_epochs, # until we have early stopping, there's no point in saving earlier models
+        track_epoch_data = FALSE,
         restore_path = c('',sprintf('2_model/tmp/%s/pretrain', site_id)),
         save_path = sprintf('2_model/tmp/%s/%s', site_id, phase),
         ncpus = 1, # number of CPU cores per job. 1 is fine when using tensorflow-gpu
